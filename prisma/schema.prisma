@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  logo        String?
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  services    Service[]
+  customers   Customer[]
+  appointments Appointment[]
+  businessHours BusinessHour[]
+  blockedTimes BlockedTime[]
+  notifications Notification[]
+}
+
+model User {
+  id            String   @id @default(cuid())
+  companyId     String
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          String   @default("ADMIN")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company      Company @relation(fields: [companyId], references: [id])
+  notifications Notification[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String?
+  price           Float
+  durationMinutes Int
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company         Company @relation(fields: [companyId], references: [id])
+  appointments   Appointment[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  phone     String
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company @relation(fields: [companyId], references: [id])
+  appointments Appointment[]
+}
+
+model Appointment {
+  id               String   @id @default(cuid())
+  companyId        String
+  serviceId        String
+  customerId       String
+  date             String
+  startTime       String
+  endTime         String
+  price           Float
+  status          String   @default("PENDING")
+  notes           String?
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company         Company @relation(fields: [companyId], references: [id])
+  service         Service @relation(fields: [serviceId], references: [id])
+  customer        Customer @relation(fields: [customerId], references: [id])
+  notifications   Notification[]
+}
+
+model BusinessHour {
+  id          String   @id @default(cuid())
+  companyId   String
+  dayOfWeek   Int
+  openingTime String
+  closingTime String
+  active      Boolean  @default(true)
+
+  company     Company @relation(fields: [companyId], references: [id])
+}
+
+model BlockedTime {
+  id          String   @id @default(cuid())
+  companyId   String
+  date        String
+  startTime   String
+  endTime     String
+  reason      String?
+
+  company     Company @relation(fields: [companyId], references: [id])
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  companyId     String
+  userId        String?
+  appointmentId String?
+  title         String
+  message       String
+  read          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  company       Company @relation(fields: [companyId], references: [id])
+  user          User?    @relation(fields: [userId], references: [id])
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+}
