@@ -25,6 +25,8 @@ model Company {
   businessHours BusinessHour[]
   blockedTimes BlockedTime[]
   notifications Notification[]
+  reminderSetting ReminderSetting?
+  reminders    Reminder[]
 }
 
 model User {
@@ -100,6 +102,7 @@ model Appointment {
   service         Service @relation(fields: [serviceId], references: [id])
   customer        Customer @relation(fields: [customerId], references: [id])
   notifications   Notification[]
+  reminders       Reminder[]
 }
 
 model BusinessHour {
@@ -122,6 +125,53 @@ model BlockedTime {
   reason      String?
 
   company     Company @relation(fields: [companyId], references: [id])
+}
+
+model ReminderSetting {
+  id        String   @id @default(cuid())
+  companyId String   @unique
+  enabled   Boolean  @default(false)
+  testMode  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company            @relation(fields: [companyId], references: [id])
+  intervals ReminderInterval[]
+}
+
+model ReminderInterval {
+  id                String  @id @default(cuid())
+  reminderSettingId String
+  key               String
+  label             String
+  minutesBefore     Int
+  active            Boolean @default(true)
+  testOnly          Boolean @default(false)
+
+  reminderSetting ReminderSetting @relation(fields: [reminderSettingId], references: [id])
+
+  @@unique([reminderSettingId, key])
+}
+
+model Reminder {
+  id            String    @id @default(cuid())
+  companyId     String
+  appointmentId String
+  type          String
+  minutesBefore Int
+  scheduledFor  DateTime
+  status        String    @default("PENDING")
+  sentAt        DateTime?
+  error         String?
+  attempts      Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company     Company     @relation(fields: [companyId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@unique([appointmentId, type])
+  @@index([status, scheduledFor])
 }
 
 model Notification {

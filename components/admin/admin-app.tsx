@@ -8,6 +8,7 @@ import {
   Scissors,
   Users,
   Clock,
+  MessageCircle,
   Settings,
   LogOut,
   Menu,
@@ -21,9 +22,10 @@ import { CalendarPanel } from './panels/calendar-panel';
 import { ServicesPanel } from './panels/services-panel';
 import { CustomersPanel } from './panels/customers-panel';
 import { AvailabilityPanel } from './panels/availability-panel';
+import { RemindersPanel } from './panels/reminders-panel';
 import { SettingsPanel } from './panels/settings-panel';
 
-type TabKey = 'dashboard' | 'appointments' | 'calendar' | 'services' | 'customers' | 'availability' | 'settings';
+type TabKey = 'dashboard' | 'appointments' | 'calendar' | 'services' | 'customers' | 'availability' | 'reminders' | 'settings';
 
 const NAV_ITEMS: { key: TabKey; label: string; icon: typeof LayoutDashboard }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,6 +34,7 @@ const NAV_ITEMS: { key: TabKey; label: string; icon: typeof LayoutDashboard }[] 
   { key: 'services', label: 'Serviços', icon: Scissors },
   { key: 'customers', label: 'Clientes', icon: Users },
   { key: 'availability', label: 'Disponibilidade', icon: Clock },
+  { key: 'reminders', label: 'Lembretes', icon: MessageCircle },
   { key: 'settings', label: 'Configurações', icon: Settings },
 ];
 
@@ -123,6 +126,7 @@ export function AdminApp({ company, admin }: { company: AdminCompany; admin: Adm
             {activeTab === 'services' ? <ServicesPanel /> : null}
             {activeTab === 'customers' ? <CustomersPanel /> : null}
             {activeTab === 'availability' ? <AvailabilityPanel /> : null}
+            {activeTab === 'reminders' ? <RemindersPanel /> : null}
             {activeTab === 'settings' ? <SettingsPanel company={company} admin={admin} /> : null}
           </div>
         </div>

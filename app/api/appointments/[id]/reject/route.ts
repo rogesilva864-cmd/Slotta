@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
+import { cancelPendingRemindersForAppointment, sendAppointmentCancelledMessage } from '@/lib/reminders/service';
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   return rejectAppointment(params.id, request);
@@ -45,6 +46,12 @@ async function rejectAppointment(appointmentId: string, request: Request) {
         appointmentId: appointment.id,
       },
     });
+
+    // Cancela lembretes pendentes desse agendamento e avisa o cliente por WhatsApp (best-effort).
+    await cancelPendingRemindersForAppointment(appointment.id).catch((error) => {
+      console.error('[appointments/reject] Falha ao cancelar lembretes:', error);
+    });
+    await sendAppointmentCancelledMessage(appointment.id, rejectionReason);
 
     return NextResponse.json({ message: 'Agendamento rejeitado.', appointment: updatedAppointment });
   } catch {
