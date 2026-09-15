@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 
+// Evita que o Next tente pré-renderizar esta página no momento do build
+// (quando o banco/volume ainda não está disponível) — os dados passam
+// a ser buscados a cada requisição, em tempo real.
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const companies = await prisma.company.findMany({
     include: {
