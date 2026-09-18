@@ -66,15 +66,16 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 ### E-mail de recuperação de senha (opcional, mas recomendado)
 
 Sem isso, o "Esqueci minha senha" continua funcionando, mas o link cai
-só no log do servidor (ninguém recebe e-mail). Se você tiver um SMTP
-(Gmail com senha de app, Resend, SendGrid etc.), adicione:
+só no log do servidor (ninguém recebe e-mail). Usa a API HTTP do
+[Brevo](https://www.brevo.com) (não SMTP — várias plataformas de deploy,
+Railway incluída, bloqueiam portas SMTP de saída, então um Gmail/SMTP
+tradicional não funciona aqui). Crie uma conta gratuita, verifique um
+remetente em **Senders** e gere uma API key em **SMTP & API**. Adicione:
 
 ```
-SMTP_HOST=...
-SMTP_PORT=587
-SMTP_USER=...
-SMTP_PASSWORD=...
-SMTP_FROM="Slotta <no-reply@seudominio.com>"
+BREVO_API_KEY=...
+EMAIL_FROM_ADDRESS=seu-remetente-verificado@exemplo.com
+EMAIL_FROM_NAME=Slotta
 ```
 
 ## 5. Popular o banco de produção (opcional)
@@ -100,5 +101,5 @@ gerado em **Settings → Networking** é o que você compartilha.
 
 - Trocar a senha do admin demo (ou remover a empresa demo).
 - Configurar um domínio próprio em **Settings → Networking → Custom Domain**.
-- Configurar o SMTP se ainda não tiver feito, para o "esqueci minha senha"
-  funcionar de verdade.
+- Configurar o Brevo se ainda não tiver feito, para o "esqueci minha
+  senha" funcionar de verdade.
