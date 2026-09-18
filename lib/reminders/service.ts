@@ -197,7 +197,7 @@ export async function sendAppointmentConfirmedMessage(appointmentId: string) {
   if (!setting?.enabled) return;
 
   try {
-    await sendWhatsappMessage({
+    const result = await sendWhatsappMessage({
       to: appointment.customer.phone,
       templateType: 'APPOINTMENT_CONFIRMED',
       variables: {
@@ -208,6 +208,7 @@ export async function sendAppointmentConfirmedMessage(appointmentId: string) {
         startTime: appointment.startTime,
       },
     });
+    if (!result.success) console.error('[reminders] WhatsApp recusou a confirmação:', result.error);
   } catch (error) {
     console.error('[reminders] Falha ao enviar confirmação por WhatsApp:', error);
   }
@@ -225,7 +226,7 @@ export async function sendAppointmentCancelledMessage(appointmentId: string, rea
   if (!setting?.enabled) return;
 
   try {
-    await sendWhatsappMessage({
+    const result = await sendWhatsappMessage({
       to: appointment.customer.phone,
       templateType: 'APPOINTMENT_CANCELLED',
       variables: {
@@ -237,6 +238,7 @@ export async function sendAppointmentCancelledMessage(appointmentId: string, rea
         reason: reason ?? '',
       },
     });
+    if (!result.success) console.error('[reminders] WhatsApp recusou o cancelamento:', result.error);
   } catch (error) {
     console.error('[reminders] Falha ao enviar cancelamento por WhatsApp:', error);
   }
