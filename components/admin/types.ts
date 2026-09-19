@@ -80,6 +80,13 @@ export function formatDate(value: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
 }
 
+/** Link do WhatsApp (wa.me) para o dono avisar um cliente por conta própria. */
+export function whatsappLink(phone: string, text: string) {
+  const digits = phone.replace(/\D/g, '');
+  const full = digits.startsWith('55') && digits.length >= 12 ? digits : `55${digits}`;
+  return `https://wa.me/${full}?text=${encodeURIComponent(text)}`;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
   CONFIRMED: 'Confirmado',

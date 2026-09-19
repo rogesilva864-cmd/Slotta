@@ -115,6 +115,32 @@ export async function sendReviewRequestEmail(
   });
 }
 
+export async function sendAppointmentCancelledEmail(
+  to: string,
+  data: { customerName: string; companyName: string; serviceName: string; date: string; startTime: string; reason: string; bookingUrl: string }
+) {
+  const [year, month, day] = data.date.split('-');
+  const when = `${day}/${month}/${year} às ${data.startTime}`;
+  const line = `Seu horário de ${data.serviceName} na ${data.companyName}, marcado para ${when}, precisou ser cancelado.`;
+
+  return sendEmail({
+    to,
+    subject: `Seu horário na ${data.companyName} foi cancelado`,
+    text: `Olá, ${data.customerName}!
+
+${line}
+Motivo: ${data.reason}
+
+Pedimos desculpas pelo imprevisto. Para escolher um novo horário, acesse:
+${data.bookingUrl}`,
+    html: layout(
+      'Seu horário foi cancelado',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;">Olá, ${escapeHtml(data.customerName)}!</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;">${escapeHtml(line)}</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;"><strong style="color:#edf4ff;">Motivo:</strong> ${escapeHtml(data.reason)}<br/>Pedimos desculpas pelo imprevisto.</p>`,
+      { url: data.bookingUrl, label: 'Escolher novo horário' }
+    ),
+  });
+}
+
 export async function sendDailyDigestEmail(
   to: string,
   data: { dateLabel: string; items: { time: string; customerName: string; serviceName: string; status: string }[]; panelUrl: string }

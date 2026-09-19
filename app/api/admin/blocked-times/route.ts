@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
+import { canCancelAppointment } from '@/lib/appointments/cancel';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -52,9 +53,12 @@ export async function POST(request: Request) {
     });
     const conflicts = sameDay
       .filter((appointment) => toMinutes(appointment.startTime) < toMinutes(endTime) && toMinutes(appointment.endTime) > toMinutes(startTime))
+      .filter((appointment) => canCancelAppointment(appointment))
       .map((appointment) => ({
         id: appointment.id,
+        date: appointment.date,
         customerName: appointment.customer.name,
+        customerPhone: appointment.customer.phone,
         startTime: appointment.startTime,
         status: appointment.status,
       }));

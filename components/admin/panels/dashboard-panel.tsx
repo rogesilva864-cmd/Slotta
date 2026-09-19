@@ -9,6 +9,7 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -33,7 +34,7 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   const pending = appointments.filter((appointment) => appointment.status === 'PENDING').length;
   const isConfirmedOrDone = (status: string) => status === 'CONFIRMED' || status === 'COMPLETED';
@@ -53,7 +54,7 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
 
   return (
     <div className="space-y-6">
-      <QuickBlockCard onOpenAvailability={() => onNavigate('availability')} />
+      <QuickBlockCard onOpenAvailability={() => onNavigate('availability')} onChanged={() => setRefreshKey((key) => key + 1)} />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { Appointment } from '../types';
 import { formatCurrency, formatDate, statusClass, statusLabel } from '../types';
+import { CANCEL_REASON_DEFAULT, ManualContactList, channelLabel, requestCancel, type ManualContact } from '../cancel-helpers';
 
 const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: 'ALL', label: 'Todos' },
@@ -10,8 +11,13 @@ const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: 'CONFIRMED', label: 'Confirmados' },
   { key: 'COMPLETED', label: 'Concluídos' },
   { key: 'NO_SHOW', label: 'Faltas' },
+  { key: 'CANCELLED', label: 'Cancelados' },
   { key: 'REJECTED', label: 'Rejeitados' },
 ];
+
+function canBeCancelled(appointment: Appointment) {
+  return appointment.status === 'CONFIRMED' && new Date(`${appointment.date}T${appointment.endTime}:00-03:00`).getTime() > Date.now();
+}
 
 const ATTENDANCE_STATUSES = ['CONFIRMED', 'COMPLETED', 'NO_SHOW'];
 
@@ -26,6 +32,9 @@ export function AppointmentsPanel() {
   const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [manualContacts, setManualContacts] = useState<ManualContact[]>([]);
 
   const loadData = async () => {
     setLoading(true);
@@ -56,6 +65,27 @@ export function AppointmentsPanel() {
     if (response.ok) {
       await loadData();
     }
+    setPendingAction(null);
+  };
+
+  const confirmCancel = async (appointment: Appointment) => {
+    setPendingAction(appointment.id);
+    setNotice(null);
+    setManualContacts([]);
+    const outcome = await requestCancel(appointment.id, cancelReason.trim() || CANCEL_REASON_DEFAULT);
+
+    if (!outcome.ok) {
+      setNotice(outcome.message);
+    } else if (outcome.needsManualContact) {
+      setNotice(`Agendamento de ${outcome.customerName} cancelado, mas o Slotta não conseguiu avisar o cliente.`);
+      setManualContacts([{ name: appointment.customer.name, phone: appointment.customer.phone, date: appointment.date, startTime: appointment.startTime }]);
+    } else {
+      setNotice(`Agendamento de ${outcome.customerName} cancelado. Cliente avisado por ${channelLabel(outcome.notifiedBy)}.`);
+    }
+
+    setCancelingId(null);
+    setCancelReason('');
+    if (outcome.ok) await loadData();
     setPendingAction(null);
   };
 
@@ -103,6 +133,7 @@ export function AppointmentsPanel() {
       </div>
 
       {notice ? <p className="mt-3 text-sm text-cyan-200" role="status">{notice}</p> : null}
+      <ManualContactList contacts={manualContacts} />
 
       <div className="mt-4 space-y-3">
         {loading ? <p className="text-sm text-slate-300">Carregando agendamentos...</p> : null}
@@ -121,8 +152,52 @@ export function AppointmentsPanel() {
               {appointment.service.name} · {formatDate(appointment.date)} · {appointment.startTime} - {appointment.endTime} · {formatCurrency(appointment.price)}
             </p>
             {appointment.notes ? <p className="mt-1 text-xs text-slate-400">Obs: {appointment.notes}</p> : null}
-            {appointment.status === 'REJECTED' && appointment.rejectionReason ? (
+            {(appointment.status === 'REJECTED' || appointment.status === 'CANCELLED') && appointment.rejectionReason ? (
               <p className="mt-1 text-xs text-rose-300">Motivo: {appointment.rejectionReason}</p>
+            ) : null}
+
+            {canBeCancelled(appointment) ? (
+              cancelingId === appointment.id ? (
+                <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-slate-950/30 p-3">
+                  <label className="field">
+                    <span>Motivo (o cliente vai ver)</span>
+                    <input
+                      type="text"
+                      maxLength={200}
+                      value={cancelReason}
+                      onChange={(event) => setCancelReason(event.target.value)}
+                      placeholder={CANCEL_REASON_DEFAULT}
+                    />
+                  </label>
+                  <p className="text-xs text-slate-400">O cliente será avisado por WhatsApp (se ativado) e por e-mail (se ele informou um).</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={pendingAction === appointment.id}
+                      onClick={() => confirmCancel(appointment)}
+                      className="btn-primary !px-4 !py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Cancelar e avisar o cliente
+                    </button>
+                    <button type="button" onClick={() => setCancelingId(null)} className="btn-secondary !px-4 !py-2 text-sm">
+                      Voltar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCancelingId(appointment.id);
+                      setCancelReason('');
+                    }}
+                    className="btn-secondary !px-4 !py-2 text-sm"
+                  >
+                    Cancelar agendamento
+                  </button>
+                </div>
+              )
             ) : null}
 
             {ATTENDANCE_STATUSES.includes(appointment.status) && hasStarted(appointment) ? (

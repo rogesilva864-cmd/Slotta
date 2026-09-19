@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CalendarOff } from 'lucide-react';
 import type { BlockedTimeItem } from './types';
+import { CANCEL_REASON_DEFAULT, ManualContactList, channelLabel, requestCancel, type ManualContact } from './cancel-helpers';
+
+type Conflict = { id: string; date: string; customerName: string; customerPhone: string; startTime: string };
 
 type Slot = { date: string; startTime: string; endTime: string } | null;
 
@@ -58,10 +61,13 @@ function describeBlock(block: BlockedTimeItem, today: string) {
   return `${dayLabel} · ${wholeDay ? 'dia todo' : `${block.startTime} às ${block.endTime}`}`;
 }
 
-export function QuickBlockCard({ onOpenAvailability }: { onOpenAvailability: () => void }) {
+export function QuickBlockCard({ onOpenAvailability, onChanged }: { onOpenAvailability: () => void; onChanged?: () => void }) {
   const [blocks, setBlocks] = useState<BlockedTimeItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: 'ok' | 'warn' | 'error'; text: string } | null>(null);
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [manualContacts, setManualContacts] = useState<ManualContact[]>([]);
 
   const load = useCallback(async () => {
     const response = await fetch('/api/admin/availability');
@@ -82,6 +88,9 @@ export function QuickBlockCard({ onOpenAvailability }: { onOpenAvailability: () 
     if (!slot) return;
     setBusy(true);
     setMessage(null);
+    setConflicts([]);
+    setConfirmingCancel(false);
+    setManualContacts([]);
     try {
       const response = await fetch('/api/admin/blocked-times', {
         method: 'POST',
@@ -94,12 +103,12 @@ export function QuickBlockCard({ onOpenAvailability }: { onOpenAvailability: () 
         return;
       }
 
-      const conflicts = Array.isArray(data.conflicts) ? (data.conflicts as { customerName: string; startTime: string }[]) : [];
-      if (conflicts.length > 0) {
-        const list = conflicts.map((item) => `${item.customerName} (${item.startTime})`).join(', ');
+      const found = Array.isArray(data.conflicts) ? (data.conflicts as Conflict[]) : [];
+      if (found.length > 0) {
+        setConflicts(found);
         setMessage({
           tone: 'warn',
-          text: `Bloqueado. Atenção: você já tem ${conflicts.length} agendamento(s) nesse período: ${list}. Eles continuam valendo até você cancelar.`,
+          text: `Horário bloqueado, mas você já tem ${found.length} agendamento(s) nesse período. Os clientes ainda não sabem do imprevisto.`,
         });
       } else {
         setMessage({ tone: 'ok', text: 'Horário bloqueado. Novos clientes não conseguem mais agendar nesse período.' });
@@ -108,6 +117,33 @@ export function QuickBlockCard({ onOpenAvailability }: { onOpenAvailability: () 
     } finally {
       setBusy(false);
     }
+  };
+
+  const cancelConflicts = async () => {
+    setBusy(true);
+    setConfirmingCancel(false);
+    const notified: string[] = [];
+    const manual: ManualContact[] = [];
+    let failed = 0;
+
+    for (const item of conflicts) {
+      const outcome = await requestCancel(item.id, CANCEL_REASON_DEFAULT);
+      if (!outcome.ok) {
+        failed += 1;
+        continue;
+      }
+      if (outcome.needsManualContact) manual.push({ name: item.customerName, phone: item.customerPhone, date: item.date, startTime: item.startTime });
+      else notified.push(`${item.customerName} (${channelLabel(outcome.notifiedBy)})`);
+    }
+
+    setConflicts([]);
+    setManualContacts(manual);
+    const parts = [`${conflicts.length - failed} agendamento(s) cancelado(s).`];
+    if (notified.length > 0) parts.push(`Avisados automaticamente: ${notified.join(', ')}.`);
+    if (failed > 0) parts.push(`${failed} não puderam ser cancelados (já terminaram ou foram encerrados).`);
+    setMessage({ tone: manual.length > 0 || failed > 0 ? 'warn' : 'ok', text: parts.join(' ') });
+    setBusy(false);
+    onChanged?.();
   };
 
   const unblock = async (id: string) => {
@@ -157,6 +193,40 @@ export function QuickBlockCard({ onOpenAvailability }: { onOpenAvailability: () 
           {message.text}
         </p>
       ) : null}
+
+      {conflicts.length > 0 ? (
+        <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-sm">
+          <ul className="space-y-1">
+            {conflicts.map((item) => (
+              <li key={item.id}>
+                {item.customerName} · {item.date.split('-').reverse().slice(0, 2).join('/')} às {item.startTime}
+              </li>
+            ))}
+          </ul>
+          {confirmingCancel ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="font-medium">Cancelar {conflicts.length} agendamento(s) e avisar os clientes agora?</span>
+              <button type="button" className="btn-primary !px-4 !py-2 text-sm" disabled={busy} onClick={cancelConflicts}>
+                Sim, cancelar e avisar
+              </button>
+              <button type="button" className="btn-secondary !px-4 !py-2 text-sm" disabled={busy} onClick={() => setConfirmingCancel(false)}>
+                Voltar
+              </button>
+            </div>
+          ) : (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" className="btn-primary !px-4 !py-2 text-sm" disabled={busy} onClick={() => setConfirmingCancel(true)}>
+                Cancelar e avisar os clientes
+              </button>
+              <button type="button" className="btn-secondary !px-4 !py-2 text-sm" disabled={busy} onClick={() => setConflicts([])}>
+                Manter os agendamentos
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      <ManualContactList contacts={manualContacts} />
 
       {blocks.length > 0 ? (
         <div className="mt-5 border-t border-white/10 pt-4">

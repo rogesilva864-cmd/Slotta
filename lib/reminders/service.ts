@@ -215,15 +215,17 @@ export async function sendAppointmentConfirmedMessage(appointmentId: string) {
 }
 
 /** Mensagem imediata de cancelamento — mesmo interruptor da empresa. */
-export async function sendAppointmentCancelledMessage(appointmentId: string, reason?: string | null) {
+export type CancelledMessageOutcome = { status: 'sent' | 'disabled' | 'failed' };
+
+export async function sendAppointmentCancelledMessage(appointmentId: string, reason?: string | null): Promise<CancelledMessageOutcome> {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: { customer: true, service: true, company: true },
   });
-  if (!appointment) return;
+  if (!appointment) return { status: 'failed' };
 
   const setting = await prisma.reminderSetting.findUnique({ where: { companyId: appointment.companyId } });
-  if (!setting?.enabled) return;
+  if (!setting?.enabled) return { status: 'disabled' };
 
   try {
     const result = await sendWhatsappMessage({
@@ -238,8 +240,13 @@ export async function sendAppointmentCancelledMessage(appointmentId: string, rea
         reason: reason ?? '',
       },
     });
-    if (!result.success) console.error('[reminders] WhatsApp recusou o cancelamento:', result.error);
+    if (!result.success) {
+      console.error('[reminders] WhatsApp recusou o cancelamento:', result.error);
+      return { status: 'failed' };
+    }
+    return { status: 'sent' };
   } catch (error) {
     console.error('[reminders] Falha ao enviar cancelamento por WhatsApp:', error);
+    return { status: 'failed' };
   }
 }
