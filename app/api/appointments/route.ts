@@ -66,7 +66,8 @@ export async function POST(request: Request) {
       where: {
         id: `customer-${companyId}-${phone.replace(/\D/g, '')}`,
       },
-      update: { name: customerName, email: email || null },
+      // Só atualiza o e-mail quando o cliente informa um: deixar em branco não pode apagar o que já temos.
+      update: { name: customerName, ...(email ? { email } : {}) },
       create: {
         id: `customer-${companyId}-${phone.replace(/\D/g, '')}`,
         companyId,

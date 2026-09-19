@@ -221,17 +221,22 @@ export function BookingClient({ company, services }: { company: Company; service
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <label className="field">
                 <span>Nome completo</span>
-                <input type="text" value={form.customerName} onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))} placeholder="Seu nome completo" required />
+                <input type="text" autoComplete="name" value={form.customerName} onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))} placeholder="Seu nome completo" required />
               </label>
 
               <label className="field">
                 <span>Telefone / WhatsApp</span>
-                <input type="tel" value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="(11) 99999-9999" required />
+                <input type="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="(11) 99999-9999" required />
               </label>
 
               <label className="field">
-                <span>E-mail</span>
-                <input type="email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} placeholder="seu@email.com" />
+                <span>
+                  E-mail <span className="font-normal text-cyan-300">(recomendado)</span>
+                </span>
+                <input type="email" autoComplete="email" inputMode="email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} placeholder="seu@email.com" />
+                <span className="text-xs font-normal text-slate-400">
+                  Enviamos a confirmação do horário e avisamos você por aqui caso haja algum imprevisto.
+                </span>
               </label>
 
               <label className="field">
