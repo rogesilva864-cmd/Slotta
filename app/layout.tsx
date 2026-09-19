@@ -1,12 +1,15 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import Image from 'next/image';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { PwaRegister } from '@/components/pwa-register';
 
+const sans = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+
 export const metadata: Metadata = {
-  title: 'Agendamento SaaS',
-  description: 'Sistema profissional de agendamento para empresas clientes.',
-  applicationName: 'Agendamento SaaS',
+  title: 'Slotta — Agende. Confirme. Organize.',
+  description: 'Agendamento online com confirmação e lembretes por WhatsApp para o seu negócio.',
+  applicationName: 'Slotta',
   manifest: '/manifest.webmanifest',
   icons: [
     { rel: 'icon', url: '/logo-agenda.jpeg' },
@@ -18,7 +21,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#020817',
+  themeColor: '#050d1a',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body>
+      <body className={sans.variable}>
         <PwaRegister />
         <div className="app-shell">
           <div className="brand-bar">

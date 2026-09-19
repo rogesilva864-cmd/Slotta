@@ -3,13 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --background: #071320;
-  --foreground: #edf4ff;
-  --muted: #aac0dd;
+  --background: #050d1a;
+  --foreground: #eef4ff;
+  --muted: #9fb4d3;
   --primary: #2f7dff;
   --secondary: #12d0ff;
-  --panel: rgba(13, 24, 38, 0.92);
-  --border: rgba(148, 178, 255, 0.2);
+  --panel: rgba(11, 22, 38, 0.86);
+  --border: rgba(148, 178, 255, 0.16);
+  --gradient-brand: linear-gradient(135deg, #2f7dff 0%, #12d0ff 100%);
 }
 
 html {
@@ -19,109 +20,14 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top left, rgba(47,125,255,0.16), transparent 20%),
-    radial-gradient(circle at bottom right, rgba(18,208,255,0.08), transparent 20%),
+  background:
+    radial-gradient(900px 500px at 0% 0%, rgba(47, 125, 255, 0.18), transparent 60%),
+    radial-gradient(800px 480px at 100% 100%, rgba(18, 208, 255, 0.1), transparent 60%),
     var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.app-shell {
-  min-height: 100vh;
-}
-
-.brand-bar {
-  width: 100%;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(7, 19, 32, 0.72);
-  backdrop-filter: blur(14px);
-}
-
-.brand-wrap {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.1rem 1.25rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.brand-logo {
-  display: block;
-  width: clamp(220px, 46vw, 620px);
-  max-width: 100%;
-  min-width: 220px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 22px rgba(18, 208, 255, 0.16));
-}
-
-.premium-header {
-  padding: 1.5rem 1.5rem 1.4rem;
-  background: linear-gradient(135deg, rgba(21, 33, 48, 0.94), rgba(10, 17, 28, 0.88));
-  border: 1px solid rgba(148, 178, 255, 0.18);
-}
-
-.hero-card {
-  background: linear-gradient(135deg, rgba(13, 24, 38, 0.92), rgba(17, 31, 49, 0.88));
-  border: 1px solid rgba(148, 178, 255, 0.2);
-}
-
-.stat-card {
-  padding: 1.25rem 1.2rem;
-  min-height: 120px;
-}
-
-.feature-box {
-  border: 1px solid rgba(148, 178, 255, 0.16);
-  background: rgba(15, 23, 42, 0.56);
-  border-radius: 1rem;
-  padding: 1rem;
-}
-
-.feature-title {
-  margin: 0;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: #7dd3fc;
-}
-
-.feature-text {
-  margin-top: 0.75rem;
-  color: #d7e5f8;
-  font-size: 0.92rem;
-  line-height: 1.5;
-}
-
-.dashboard-topbar {
-  background: linear-gradient(135deg, rgba(13, 24, 38, 0.96), rgba(17, 31, 49, 0.86));
-}
-
-.dashboard-logo {
-  width: 130px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 12px 24px rgba(18, 208, 255, 0.16));
-}
-
-.admin-appointment-item,
-.notification-item,
-.service-item,
-.admin-form {
-  background: rgba(15, 23, 42, 0.62);
-}
-
-.consultation-card {
-  background: linear-gradient(135deg, rgba(15, 25, 38, 0.95), rgba(8, 15, 24, 0.9));
-  border: 1px solid rgba(148, 178, 255, 0.2);
-}
-
-.consultation-logo {
-  width: 180px;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 12px 26px rgba(18, 208, 255, 0.12));
+  font-family: var(--font-sans), system-ui, 'Segoe UI', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
@@ -136,26 +42,163 @@ button {
   cursor: pointer;
 }
 
+::selection {
+  background: rgba(47, 125, 255, 0.45);
+}
+
+:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.brand-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(5, 13, 26, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.brand-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.35rem 1.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.brand-logo {
+  display: block;
+  width: clamp(170px, 26vw, 250px);
+  height: auto;
+  object-fit: contain;
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at center, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at center, #000 40%, transparent 100%);
+}
+
+.gradient-text {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.premium-header {
+  padding: 1.5rem 1.5rem 1.4rem;
+  background: linear-gradient(135deg, rgba(18, 32, 52, 0.92), rgba(8, 16, 28, 0.86));
+  border: 1px solid var(--border);
+}
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(11, 22, 38, 0.92), rgba(15, 30, 50, 0.86));
+  border: 1px solid var(--border);
+}
+
+.hero-card::before {
+  content: '';
+  position: absolute;
+  inset: -40% -20% auto auto;
+  width: 60%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, rgba(18, 208, 255, 0.16), transparent 65%);
+  pointer-events: none;
+}
+
+.stat-card {
+  padding: 1.25rem 1.2rem;
+  min-height: 120px;
+}
+
+.feature-box {
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 1rem;
+  padding: 1.1rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.feature-box:hover {
+  transform: translateY(-2px);
+  border-color: rgba(18, 208, 255, 0.4);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.feature-title {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #7dd3fc;
+}
+
+.feature-text {
+  margin-top: 0.6rem;
+  color: #d3e2f7;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.dashboard-topbar {
+  background: linear-gradient(135deg, rgba(11, 22, 38, 0.96), rgba(15, 30, 50, 0.86));
+}
+
+.dashboard-logo {
+  width: 130px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(18, 208, 255, 0.16));
+}
+
+.admin-appointment-item,
+.notification-item,
+.service-item,
+.admin-form {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.consultation-card {
+  background: linear-gradient(135deg, rgba(13, 24, 38, 0.95), rgba(7, 14, 24, 0.9));
+  border: 1px solid var(--border);
+}
+
+.consultation-logo {
+  width: 180px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 26px rgba(18, 208, 255, 0.12));
+}
+
 .card {
-  @apply rounded-2xl border border-white/10 bg-slate-900/80 shadow-soft;
+  @apply rounded-2xl border border-white/10 bg-slate-900/70 shadow-soft backdrop-blur-sm;
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-full bg-brand-500 px-5 py-3 font-semibold text-white transition hover:bg-brand-600;
+  @apply inline-flex items-center justify-center rounded-full px-5 py-3 font-semibold text-white shadow-glow transition duration-200 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+  background-image: var(--gradient-brand);
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10;
+  @apply inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white transition duration-200 hover:border-white/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60;
 }
 
 .field {
-  @apply flex flex-col gap-2 text-sm text-slate-200;
+  @apply flex flex-col gap-2 text-sm font-medium text-slate-200;
 }
 
 .field input,
 .field select,
 .field textarea {
-  @apply w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-3 text-white outline-none transition focus:border-brand-500;
+  @apply w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-3 font-normal text-white outline-none transition placeholder:text-slate-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30;
 }
 
 .status-pill {
@@ -180,4 +223,15 @@ button {
 
 .status-completed {
   @apply bg-cyan-500/10 text-cyan-300 ring-1 ring-cyan-400/20;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .btn-primary,
+  .feature-box {
+    transition: none;
+  }
 }

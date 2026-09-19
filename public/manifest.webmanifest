@@ -1,11 +1,11 @@
 {
-  "name": "Agendamento SaaS",
-  "short_name": "Agenda",
-  "description": "Sistema profissional de agendamento para empresas clientes.",
+  "name": "Slotta",
+  "short_name": "Slotta",
+  "description": "Agendamento online com confirmação e lembretes por WhatsApp.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#020817",
-  "theme_color": "#020817",
+  "background_color": "#050d1a",
+  "theme_color": "#050d1a",
   "orientation": "portrait",
   "scope": "/",
   "icons": [
