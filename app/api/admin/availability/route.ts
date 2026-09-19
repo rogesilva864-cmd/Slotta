@@ -36,6 +36,12 @@ export async function PATCH(request: Request) {
       const openingTime = String(day.openingTime ?? '');
       const closingTime = String(day.closingTime ?? '');
       const active = Boolean(day.active);
+      const rawBreakStart = String(day.breakStart ?? '');
+      const rawBreakEnd = String(day.breakEnd ?? '');
+      const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+      const hasBreak = timePattern.test(rawBreakStart) && timePattern.test(rawBreakEnd) && rawBreakEnd > rawBreakStart;
+      const breakStart = hasBreak ? rawBreakStart : null;
+      const breakEnd = hasBreak ? rawBreakEnd : null;
 
       if (Number.isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) continue;
       if (!/^\d{2}:\d{2}$/.test(openingTime) || !/^\d{2}:\d{2}$/.test(closingTime)) continue;
@@ -47,11 +53,11 @@ export async function PATCH(request: Request) {
       if (existing) {
         await prisma.businessHour.update({
           where: { id: existing.id },
-          data: { openingTime, closingTime, active },
+          data: { openingTime, closingTime, active, breakStart, breakEnd },
         });
       } else {
         await prisma.businessHour.create({
-          data: { companyId: sessionUser.companyId, dayOfWeek, openingTime, closingTime, active },
+          data: { companyId: sessionUser.companyId, dayOfWeek, openingTime, closingTime, active, breakStart, breakEnd },
         });
       }
     }

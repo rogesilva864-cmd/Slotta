@@ -131,6 +131,8 @@ model BusinessHour {
   dayOfWeek   Int
   openingTime String
   closingTime String
+  breakStart  String?
+  breakEnd    String?
   active      Boolean  @default(true)
 
   company     Company @relation(fields: [companyId], references: [id])

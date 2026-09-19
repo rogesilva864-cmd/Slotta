@@ -36,3 +36,23 @@ describe('past slots', () => {
     assert.equal(isSlotInPast('2026-09-19', 23 * 60, lateNight), false);
   });
 });
+
+import { overlapsBreak } from '../lib/availability';
+
+describe('overlapsBreak (almoço)', () => {
+  it('does nothing when there is no break', () => {
+    assert.equal(overlapsBreak(12 * 60, 30, null, null), false);
+    assert.equal(overlapsBreak(12 * 60, 30, '12:00', null), false);
+  });
+
+  it('blocks slots that invade the break', () => {
+    assert.equal(overlapsBreak(12 * 60, 30, '12:00', '13:00'), true);
+    assert.equal(overlapsBreak(12 * 60 + 30, 30, '12:00', '13:00'), true);
+    assert.equal(overlapsBreak(11 * 60 + 40, 30, '12:00', '13:00'), true); // termina 12:10
+  });
+
+  it('allows slots that only touch the edges of the break', () => {
+    assert.equal(overlapsBreak(11 * 60 + 30, 30, '12:00', '13:00'), false); // termina 12:00
+    assert.equal(overlapsBreak(13 * 60, 30, '12:00', '13:00'), false); // começa 13:00
+  });
+});

@@ -47,6 +47,8 @@ export type BusinessHourItem = {
   dayOfWeek: number;
   openingTime: string;
   closingTime: string;
+  breakStart?: string | null;
+  breakEnd?: string | null;
   active: boolean;
 };
 

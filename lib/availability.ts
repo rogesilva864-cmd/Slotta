@@ -24,6 +24,12 @@ export function isSlotInPast(date: string, slotStartMinutes: number, now: Date =
   return date === today.date && slotStartMinutes <= today.minutes;
 }
 
+/** Um atendimento que invade a pausa (ex: almoço) não pode ser oferecido. Encostar no início ou no fim da pausa é permitido. */
+export function overlapsBreak(slotStartMinutes: number, durationMinutes: number, breakStart?: string | null, breakEnd?: string | null) {
+  if (!breakStart || !breakEnd) return false;
+  return slotStartMinutes < timeToMinutes(breakEnd) && slotStartMinutes + durationMinutes > timeToMinutes(breakStart);
+}
+
 export async function getAvailableSlots(companyId: string, serviceId: string, date: string, now: Date = new Date()) {
   const service = await prisma.service.findFirst({
     where: { id: serviceId, companyId, active: true },
@@ -61,6 +67,7 @@ export async function getAvailableSlots(companyId: string, serviceId: string, da
 
   for (let current = start; current + duration <= end; current += 30) {
     if (isSlotInPast(date, current, now)) continue;
+    if (overlapsBreak(current, duration, todayHours.breakStart, todayHours.breakEnd)) continue;
 
     const slot = minutesToTime(current);
     const slotEnd = minutesToTime(current + duration);
