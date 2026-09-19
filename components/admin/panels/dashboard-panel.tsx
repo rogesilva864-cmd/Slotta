@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Appointment, NotificationItem } from '../types';
-import { formatCurrency, formatDate, statusClass } from '../types';
+import { formatCurrency, formatDate, statusClass, statusLabel } from '../types';
 import { QuickBlockCard } from '../quick-block-card';
 
 export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments' | 'calendar' | 'availability') => void }) {
@@ -36,9 +36,10 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
   }, []);
 
   const pending = appointments.filter((appointment) => appointment.status === 'PENDING').length;
-  const confirmed = appointments.filter((appointment) => appointment.status === 'CONFIRMED').length;
+  const isConfirmedOrDone = (status: string) => status === 'CONFIRMED' || status === 'COMPLETED';
+  const confirmed = appointments.filter((appointment) => isConfirmedOrDone(appointment.status)).length;
   const billing = appointments
-    .filter((appointment) => appointment.status === 'CONFIRMED')
+    .filter((appointment) => isConfirmedOrDone(appointment.status))
     .reduce((total, appointment) => total + appointment.price, 0);
 
   const cards = [
@@ -82,7 +83,7 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
               <div key={appointment.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <strong>{appointment.customer.name}</strong>
-                  <span className={`status-pill ${statusClass(appointment.status)}`}>{appointment.status}</span>
+                  <span className={`status-pill ${statusClass(appointment.status)}`}>{statusLabel(appointment.status)}</span>
                 </div>
                 <p className="mt-2 text-sm text-slate-300">
                   {appointment.service.name} · {formatDate(appointment.date)} · {appointment.startTime} · {formatCurrency(appointment.price)}

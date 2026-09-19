@@ -104,7 +104,7 @@ export function ReviewRequestCard() {
       </details>
 
       <p className="mt-4 text-sm text-slate-400">
-        O convite vai por <strong>e-mail</strong>, quando o cliente informou um, e por <strong>WhatsApp</strong>, se os lembretes por WhatsApp estiverem ativados. Cada atendimento recebe no máximo um convite. Ele só é enviado para atendimentos confirmados.
+        O convite vai por <strong>e-mail</strong>, quando o cliente informou um, e por <strong>WhatsApp</strong>, se os lembretes por WhatsApp estiverem ativados. Cada atendimento recebe no máximo um convite, só para atendimentos confirmados ou concluídos. Quem faltar: marque “Não compareceu” em Agendamentos antes do horário do convite para ele não ser enviado.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

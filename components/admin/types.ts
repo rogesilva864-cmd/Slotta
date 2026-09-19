@@ -80,6 +80,19 @@ export function formatDate(value: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pendente',
+  CONFIRMED: 'Confirmado',
+  REJECTED: 'Rejeitado',
+  CANCELLED: 'Cancelado',
+  COMPLETED: 'Concluído',
+  NO_SHOW: 'Não compareceu',
+};
+
+export function statusLabel(status: string) {
+  return STATUS_LABELS[status] ?? status;
+}
+
 export function statusClass(status: string) {
   switch (status) {
     case 'PENDING':
@@ -90,6 +103,8 @@ export function statusClass(status: string) {
       return 'status-rejected';
     case 'COMPLETED':
       return 'status-completed';
+    case 'NO_SHOW':
+      return 'status-rejected';
     default:
       return 'status-cancelled';
   }

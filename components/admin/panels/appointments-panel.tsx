@@ -2,14 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import type { Appointment } from '../types';
-import { formatCurrency, formatDate, statusClass } from '../types';
+import { formatCurrency, formatDate, statusClass, statusLabel } from '../types';
 
 const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: 'ALL', label: 'Todos' },
   { key: 'PENDING', label: 'Pendentes' },
   { key: 'CONFIRMED', label: 'Confirmados' },
+  { key: 'COMPLETED', label: 'Concluídos' },
+  { key: 'NO_SHOW', label: 'Faltas' },
   { key: 'REJECTED', label: 'Rejeitados' },
 ];
+
+const ATTENDANCE_STATUSES = ['CONFIRMED', 'COMPLETED', 'NO_SHOW'];
+
+function hasStarted(appointment: Appointment) {
+  return new Date(`${appointment.date}T${appointment.startTime}:00-03:00`).getTime() <= Date.now();
+}
 
 export function AppointmentsPanel() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -17,6 +25,7 @@ export function AppointmentsPanel() {
   const [status, setStatus] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -50,6 +59,20 @@ export function AppointmentsPanel() {
     setPendingAction(null);
   };
 
+  const registerAttendance = async (appointmentId: string, attendance: 'COMPLETED' | 'NO_SHOW') => {
+    setPendingAction(appointmentId);
+    setNotice(null);
+    const response = await fetch(`/api/admin/appointments/${appointmentId}/attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: attendance }),
+    });
+    const data = await response.json();
+    setNotice(data.message ?? null);
+    if (response.ok) await loadData();
+    setPendingAction(null);
+  };
+
   return (
     <div className="card p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -79,6 +102,8 @@ export function AppointmentsPanel() {
         ))}
       </div>
 
+      {notice ? <p className="mt-3 text-sm text-cyan-200" role="status">{notice}</p> : null}
+
       <div className="mt-4 space-y-3">
         {loading ? <p className="text-sm text-slate-300">Carregando agendamentos...</p> : null}
         {!loading && appointments.length === 0 ? <p className="text-sm text-slate-300">Nenhum agendamento encontrado.</p> : null}
@@ -90,7 +115,7 @@ export function AppointmentsPanel() {
                 <strong>{appointment.customer.name}</strong>
                 <p className="text-xs text-slate-400">{appointment.customer.phone}{appointment.customer.email ? ` · ${appointment.customer.email}` : ''}</p>
               </div>
-              <span className={`status-pill ${statusClass(appointment.status)}`}>{appointment.status}</span>
+              <span className={`status-pill ${statusClass(appointment.status)}`}>{statusLabel(appointment.status)}</span>
             </div>
             <p className="mt-2 text-sm text-slate-300">
               {appointment.service.name} · {formatDate(appointment.date)} · {appointment.startTime} - {appointment.endTime} · {formatCurrency(appointment.price)}
@@ -98,6 +123,28 @@ export function AppointmentsPanel() {
             {appointment.notes ? <p className="mt-1 text-xs text-slate-400">Obs: {appointment.notes}</p> : null}
             {appointment.status === 'REJECTED' && appointment.rejectionReason ? (
               <p className="mt-1 text-xs text-rose-300">Motivo: {appointment.rejectionReason}</p>
+            ) : null}
+
+            {ATTENDANCE_STATUSES.includes(appointment.status) && hasStarted(appointment) ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-slate-400">O cliente veio?</span>
+                <button
+                  type="button"
+                  disabled={pendingAction === appointment.id || appointment.status === 'COMPLETED'}
+                  onClick={() => registerAttendance(appointment.id, 'COMPLETED')}
+                  className="btn-secondary !px-4 !py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Compareceu
+                </button>
+                <button
+                  type="button"
+                  disabled={pendingAction === appointment.id || appointment.status === 'NO_SHOW'}
+                  onClick={() => registerAttendance(appointment.id, 'NO_SHOW')}
+                  className="btn-secondary !px-4 !py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Não compareceu
+                </button>
+              </div>
             ) : null}
 
             {appointment.status === 'PENDING' ? (

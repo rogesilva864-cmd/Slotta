@@ -1,6 +1,30 @@
 import { prisma } from '@/lib/prisma';
 
-export async function getAvailableSlots(companyId: string, serviceId: string, date: string) {
+const TIMEZONE = 'America/Sao_Paulo';
+
+/** Data (AAAA-MM-DD) e minutos desde 00:00 no horário de Brasília. */
+export function brazilNowParts(now: Date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '00';
+  return { date: `${get('year')}-${get('month')}-${get('day')}`, minutes: Number(get('hour')) * 60 + Number(get('minute')) };
+}
+
+/** Um horário que já começou (ou está em um dia anterior) não pode mais ser agendado. */
+export function isSlotInPast(date: string, slotStartMinutes: number, now: Date = new Date()) {
+  const today = brazilNowParts(now);
+  if (date < today.date) return true;
+  return date === today.date && slotStartMinutes <= today.minutes;
+}
+
+export async function getAvailableSlots(companyId: string, serviceId: string, date: string, now: Date = new Date()) {
   const service = await prisma.service.findFirst({
     where: { id: serviceId, companyId, active: true },
   });
@@ -36,6 +60,8 @@ export async function getAvailableSlots(companyId: string, serviceId: string, da
   const duration = service.durationMinutes;
 
   for (let current = start; current + duration <= end; current += 30) {
+    if (isSlotInPast(date, current, now)) continue;
+
     const slot = minutesToTime(current);
     const slotEnd = minutesToTime(current + duration);
 

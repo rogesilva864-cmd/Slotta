@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Appointment } from '../types';
-import { formatCurrency, statusClass } from '../types';
+import { formatCurrency, statusClass, statusLabel } from '../types';
 
 const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
@@ -134,7 +134,7 @@ export function CalendarPanel() {
             <div key={appointment.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between gap-3">
                 <strong>{appointment.startTime}</strong>
-                <span className={`status-pill ${statusClass(appointment.status)}`}>{appointment.status}</span>
+                <span className={`status-pill ${statusClass(appointment.status)}`}>{statusLabel(appointment.status)}</span>
               </div>
               <p className="mt-1 text-sm text-slate-300">{appointment.service.name} · {appointment.customer.name}</p>
               <p className="mt-1 text-xs text-slate-400">{formatCurrency(appointment.price)}</p>

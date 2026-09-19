@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { CustomerItem } from '../types';
-import { formatDate, statusClass } from '../types';
+import { formatDate, statusClass, statusLabel } from '../types';
 
 export function CustomersPanel() {
   const [customers, setCustomers] = useState<CustomerItem[]>([]);
@@ -77,7 +77,7 @@ export function CustomersPanel() {
                 <div className="mt-3 rounded-lg border border-white/10 bg-slate-950/40 p-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <span>{customer.lastAppointment.serviceName}</span>
-                    <span className={`status-pill ${statusClass(customer.lastAppointment.status)}`}>{customer.lastAppointment.status}</span>
+                    <span className={`status-pill ${statusClass(customer.lastAppointment.status)}`}>{statusLabel(customer.lastAppointment.status)}</span>
                   </div>
                   <p className="mt-1 text-xs text-slate-400">{formatDate(customer.lastAppointment.date)} às {customer.lastAppointment.startTime}</p>
                 </div>

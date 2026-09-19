@@ -58,7 +58,7 @@ export async function processReviewRequests(now = new Date()) {
     const candidates = await prisma.appointment.findMany({
       where: {
         companyId: setting.companyId,
-        status: 'CONFIRMED',
+        status: { in: ['CONFIRMED', 'COMPLETED'] },
         date: { in: recentDates },
         reviewRequest: null,
       },
