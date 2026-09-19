@@ -27,6 +27,7 @@ model Company {
   notifications Notification[]
   reminderSetting ReminderSetting?
   reminders    Reminder[]
+  reviewRequests ReviewRequest[]
 }
 
 model User {
@@ -121,6 +122,7 @@ model Appointment {
   customer        Customer @relation(fields: [customerId], references: [id])
   notifications   Notification[]
   reminders       Reminder[]
+  reviewRequest   ReviewRequest?
 }
 
 model BusinessHour {
@@ -150,6 +152,9 @@ model ReminderSetting {
   companyId String   @unique
   enabled   Boolean  @default(false)
   testMode  Boolean  @default(false)
+  reviewEnabled      Boolean @default(false)
+  reviewUrl          String?
+  reviewDelayMinutes Int     @default(120)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -205,4 +210,20 @@ model Notification {
   company       Company @relation(fields: [companyId], references: [id])
   user          User?    @relation(fields: [userId], references: [id])
   appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+}
+
+model ReviewRequest {
+  id            String    @id @default(cuid())
+  companyId     String
+  appointmentId String    @unique
+  status        String
+  channels      String?
+  error         String?
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  company     Company     @relation(fields: [companyId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([companyId, createdAt])
 }

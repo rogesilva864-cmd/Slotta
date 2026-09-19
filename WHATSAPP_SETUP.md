@@ -35,6 +35,7 @@ variáveis numeradas `{{1}}`, `{{2}}`, ... **exatamente nessa ordem**:
 | `appointment_confirmed` | nome do cliente, nome da empresa, nome do serviço, data, horário |
 | `appointment_reminder` | nome do cliente, nome da empresa, nome do serviço, data, horário, "faltam X" |
 | `appointment_cancelled` | nome do cliente, nome da empresa, nome do serviço, data, horário, motivo |
+| `review_request` (opcional, só se usar o pedido de avaliação) | nome do cliente, nome da empresa, link de avaliação |
 
 Exemplo de corpo para `appointment_reminder`:
 
@@ -62,6 +63,7 @@ WHATSAPP_TEMPLATE_LANG=pt_BR
 WHATSAPP_TEMPLATE_CONFIRMED=appointment_confirmed
 WHATSAPP_TEMPLATE_REMINDER=appointment_reminder
 WHATSAPP_TEMPLATE_CANCELLED=appointment_cancelled
+WHATSAPP_TEMPLATE_REVIEW=review_request
 ```
 
 Sem `WHATSAPP_PROVIDER=meta`, o sistema continua no modo de log (nenhuma
@@ -82,3 +84,20 @@ Toda a lógica do Slotta chama apenas `sendWhatsappMessage(...)` de
 nova classe em `lib/whatsapp/providers/` implementando a interface
 `WhatsappProvider` e registre-a em `lib/whatsapp/index.ts` — nenhum outro
 arquivo do projeto precisa mudar.
+
+## 4. Template opcional: pedido de avaliação
+
+O pedido de avaliação depois do atendimento (aba **Lembretes** do painel) sempre
+funciona por e-mail quando o cliente informou um. Para também enviar por
+WhatsApp, crie um quarto template com o nome `review_request`, idioma
+Português (BR), com três variáveis nesta ordem:
+
+> Olá {{1}}! Obrigado por escolher a {{2}}. Sua opinião ajuda muito: avalie em menos de 1 minuto pelo link abaixo. {{3}}
+
+Exemplos para a Meta: {{1}} = "Maria", {{2}} = "Barbearia JB", {{3}} = "https://g.page/r/ABC123/review".
+
+Atenção: a Meta pode classificar esse template como **Marketing** (e não
+Utility), o que muda o preço por mensagem e, em alguns casos, exige que o
+cliente tenha aceitado receber esse tipo de contato. Enquanto ele não estiver
+aprovado, o envio por WhatsApp falha (registrado como falha no painel) e só o
+e-mail é enviado.

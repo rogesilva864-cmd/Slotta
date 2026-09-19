@@ -3,7 +3,7 @@
 // outro gateway) sem alterar a lógica principal do Slotta que consome
 // `sendWhatsappMessage`.
 
-export type WhatsappTemplateType = 'APPOINTMENT_CONFIRMED' | 'APPOINTMENT_REMINDER' | 'APPOINTMENT_CANCELLED';
+export type WhatsappTemplateType = 'APPOINTMENT_CONFIRMED' | 'APPOINTMENT_REMINDER' | 'APPOINTMENT_CANCELLED' | 'REVIEW_REQUEST';
 
 export type WhatsappSendRequest = {
   to: string;

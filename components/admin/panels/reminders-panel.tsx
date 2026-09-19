@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { formatDate, statusClass } from '../types';
 import { OwnerNotificationsCard } from '../owner-notifications-card';
+import { ReviewRequestCard } from '../review-request-card';
 
 type IntervalItem = {
   key: string;
@@ -102,6 +103,7 @@ export function RemindersPanel() {
   return (
     <div className="space-y-6">
       <OwnerNotificationsCard />
+      <ReviewRequestCard />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="card stat-card">
           <p className="text-sm text-slate-300">Enviados</p>

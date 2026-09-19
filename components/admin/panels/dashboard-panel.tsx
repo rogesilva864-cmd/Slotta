@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import type { Appointment, NotificationItem } from '../types';
 import { formatCurrency, formatDate, statusClass } from '../types';
+import { QuickBlockCard } from '../quick-block-card';
 
-export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments' | 'calendar') => void }) {
+export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments' | 'calendar' | 'availability') => void }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,8 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
 
   return (
     <div className="space-y-6">
+      <QuickBlockCard onOpenAvailability={() => onNavigate('availability')} />
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <div key={card.label} className="card stat-card">

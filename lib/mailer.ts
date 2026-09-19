@@ -95,6 +95,26 @@ export async function sendNewAppointmentEmail(
   });
 }
 
+export async function sendReviewRequestEmail(
+  to: string,
+  data: { customerName: string; companyName: string; reviewUrl: string }
+) {
+  if (!data.reviewUrl.startsWith('https://')) {
+    throw new Error('Link de avaliação inválido: precisa começar com https://');
+  }
+
+  return sendEmail({
+    to,
+    subject: `Como foi seu atendimento na ${data.companyName}?`,
+    text: `Olá, ${data.customerName}! Obrigado por escolher a ${data.companyName}.\n\nSua opinião ajuda muito. Avalie em menos de 1 minuto:\n${data.reviewUrl}`,
+    html: layout(
+      'Como foi seu atendimento?',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;">Olá, ${escapeHtml(data.customerName)}! Obrigado por escolher a <strong style="color:#edf4ff;">${escapeHtml(data.companyName)}</strong>. Sua opinião ajuda muito: leva menos de 1 minuto.</p>`,
+      { url: data.reviewUrl, label: 'Avaliar agora' }
+    ),
+  });
+}
+
 export async function sendDailyDigestEmail(
   to: string,
   data: { dateLabel: string; items: { time: string; customerName: string; serviceName: string; status: string }[]; panelUrl: string }

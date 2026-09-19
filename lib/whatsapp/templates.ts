@@ -39,6 +39,14 @@ export function renderWhatsappTemplate(templateType: WhatsappTemplateType, varia
         `\nSe quiser reagendar, é só acessar nossa página de agendamento.`
       );
 
+    case 'REVIEW_REQUEST':
+      return (
+        `⭐ *Como foi seu atendimento?*\n\n` +
+        `Olá, ${variables.customerName}! Obrigado por escolher a *${variables.companyName}*. ` +
+        `Sua opinião ajuda muito: avalie em menos de 1 minuto pelo link abaixo.\n\n` +
+        `${variables.reviewUrl}`
+      );
+
     default:
       return '';
   }

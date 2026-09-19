@@ -19,6 +19,7 @@ export async function startWorkers() {
   const { processDueReminders } = await import('@/lib/reminders/service');
   const { processDailyDigests } = await import('@/lib/owner-notifications');
   const { processBackups } = await import('@/lib/backup');
+  const { processReviewRequests } = await import('@/lib/reviews/service');
 
   const intervalSeconds = Number(process.env.REMINDER_WORKER_INTERVAL_SECONDS || 60);
   const intervalMs = Math.max(15, intervalSeconds) * 1000;
@@ -43,6 +44,14 @@ export async function startWorkers() {
       if (digests > 0) console.log(`[owner-notifications] resumos diários enviados=${digests}`);
     } catch (error) {
       console.error('[owner-notifications] Erro ao processar resumos diários:', error);
+    }
+    try {
+      const reviews = await processReviewRequests();
+      if (reviews.sent + reviews.failed + reviews.skipped > 0) {
+        console.log(`[reviews] pedidos de avaliação enviados=${reviews.sent} falhas=${reviews.failed} ignorados=${reviews.skipped}`);
+      }
+    } catch (error) {
+      console.error('[reviews] Erro ao processar pedidos de avaliação:', error);
     }
     try {
       await processBackups();

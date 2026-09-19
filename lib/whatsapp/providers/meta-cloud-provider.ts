@@ -7,18 +7,21 @@ const TEMPLATE_PARAMETER_ORDER: Record<WhatsappTemplateType, string[]> = {
   APPOINTMENT_CONFIRMED: ['customerName', 'companyName', 'serviceName', 'date', 'startTime'],
   APPOINTMENT_REMINDER: ['customerName', 'companyName', 'serviceName', 'date', 'startTime', 'intervalLabel'],
   APPOINTMENT_CANCELLED: ['customerName', 'companyName', 'serviceName', 'date', 'startTime', 'reason'],
+  REVIEW_REQUEST: ['customerName', 'companyName', 'reviewUrl'],
 };
 
 const TEMPLATE_ENV_VAR: Record<WhatsappTemplateType, string> = {
   APPOINTMENT_CONFIRMED: 'WHATSAPP_TEMPLATE_CONFIRMED',
   APPOINTMENT_REMINDER: 'WHATSAPP_TEMPLATE_REMINDER',
   APPOINTMENT_CANCELLED: 'WHATSAPP_TEMPLATE_CANCELLED',
+  REVIEW_REQUEST: 'WHATSAPP_TEMPLATE_REVIEW',
 };
 
 const DEFAULT_TEMPLATE_NAME: Record<WhatsappTemplateType, string> = {
   APPOINTMENT_CONFIRMED: 'appointment_confirmed',
   APPOINTMENT_REMINDER: 'appointment_reminder',
   APPOINTMENT_CANCELLED: 'appointment_cancelled',
+  REVIEW_REQUEST: 'review_request',
 };
 
 /**
