@@ -36,12 +36,30 @@ model User {
   email         String   @unique
   passwordHash  String
   role          String   @default("ADMIN")
+  notifyEmailFallback Boolean @default(true)
+  notifyDailyDigest   Boolean @default(true)
+  lastDigestOn        String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   company      Company @relation(fields: [companyId], references: [id])
   notifications Notification[]
   passwordResetTokens PasswordResetToken[]
+  pushSubscriptions PushSubscription[]
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PasswordResetToken {

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { appointmentSchema } from '@/lib/validators';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
+import { notifyOwnersNewAppointment } from '@/lib/owner-notifications';
 
 export async function POST(request: Request) {
   try {
@@ -66,6 +68,11 @@ export async function POST(request: Request) {
       },
     });
 
+    // Best-effort: avisa o dono (push/e-mail) sem atrasar nem derrubar a resposta ao cliente.
+    void notifyOwnersNewAppointment(appointment.id).catch((error) => {
+      console.error('[appointments] Falha ao notificar o dono:', error);
+    });
+
     return NextResponse.json({ message: 'Agendamento solicitado com sucesso.', appointment }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ message: 'Não foi possível criar o agendamento.' }, { status: 500 });
@@ -76,27 +83,31 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search')?.trim();
 
+  // Consulta pública: exige o dado completo do cliente (telefone, e-mail ou
+  // código) para nunca listar agendamentos de terceiros.
+  if (!search) {
+    return NextResponse.json({ appointments: [] });
+  }
+
+  const digits = search.replace(/\D/g, '');
+  const conditions: Prisma.AppointmentWhereInput[] = [{ id: search }];
+  if (search.includes('@')) {
+    conditions.push({ customer: { email: { equals: search } } });
+  }
+  if (digits.length >= 10) {
+    conditions.push({ customer: { id: { endsWith: digits } } });
+  }
+
   const appointments = await prisma.appointment.findMany({
+    where: { OR: conditions },
     include: {
-      service: true,
-      customer: true,
+      service: { select: { name: true } },
+      customer: { select: { name: true, phone: true, email: true } },
     },
     orderBy: { createdAt: 'desc' },
+    take: 5,
   });
 
-  const filteredAppointments = search
-    ? appointments.filter((appointment) => {
-        const customer = appointment.customer;
-        const searchValue = search.toLowerCase();
-        return (
-          customer.name.toLowerCase().includes(searchValue) ||
-          customer.phone.toLowerCase().includes(searchValue) ||
-          (customer.email ?? '').toLowerCase().includes(searchValue) ||
-          appointment.id.toLowerCase().includes(searchValue)
-        );
-      })
-    : appointments;
-
-  return NextResponse.json({ appointments: filteredAppointments });
+  return NextResponse.json({ appointments });
 }
 

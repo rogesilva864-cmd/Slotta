@@ -78,6 +78,28 @@ EMAIL_FROM_ADDRESS=seu-remetente-verificado@exemplo.com
 EMAIL_FROM_NAME=Slotta
 ```
 
+### Notificações no celular do dono (push)
+
+Avisa o dono a cada novo pedido de agendamento, com um resumo da agenda
+toda manhã. Gere um par de chaves VAPID uma única vez:
+
+```powershell
+npx web-push generate-vapid-keys
+```
+
+e adicione no Railway (o `VAPID_SUBJECT` é um e-mail de contato seu):
+
+```
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:voce@exemplo.com
+```
+
+Não troque essas chaves depois: quem já ativou as notificações precisaria
+ativar de novo. Push exige HTTPS (o Railway já fornece). No iPhone só
+funciona com o Slotta adicionado à tela inicial (iOS 16.4 ou mais novo).
+O dono ativa em **Painel → Lembretes → Avisos para você**.
+
 ## 5. Popular o banco de produção (opcional)
 
 Se quiser começar com a empresa de demonstração já cadastrada, rode uma
