@@ -10,3 +10,7 @@ npm-debug.log*
 .DS_Store
 prisma/dev.db
 tsconfig.tsbuildinfo
+
+# backups locais do banco (nunca versionar dados de clientes)
+prisma/backups/
+*.db.gz

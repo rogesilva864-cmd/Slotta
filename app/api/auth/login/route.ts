@@ -3,9 +3,22 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { loginSchema } from '@/lib/validators';
 import { signToken } from '@/lib/auth';
+import { getClientIp, peekRateLimit, recordHit, resetRateLimit, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
+
+const FAILURE_WINDOW_MS = 15 * 60 * 1000;
+const FAILURE_LIMIT = { limit: 8, windowMs: FAILURE_WINDOW_MS };
+const IP_LIMIT = { limit: 40, windowMs: FAILURE_WINDOW_MS };
+const BLOCKED_MESSAGE = 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.';
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const ipCheck = ip === 'unknown' ? { allowed: true, retryAfterSeconds: 0 } : takeRateLimit(`login:ip:${ip}`, IP_LIMIT);
+    if (!ipCheck.allowed) {
+      console.warn(`[rate-limit] Login bloqueado por excesso de tentativas do IP ${ip}.`);
+      return tooManyRequests(BLOCKED_MESSAGE, ipCheck.retryAfterSeconds);
+    }
+
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);
 
@@ -15,19 +28,29 @@ export async function POST(request: Request) {
 
     const { email, password } = parsed.data;
 
+    // Com IP desconhecido não há como separar quem errou, então o bloqueio por falhas não se aplica.
+    const failureKey = `login:fail:${ip}:${email.toLowerCase()}`;
+    const trackFailures = ip !== 'unknown';
+    const failureCheck = trackFailures ? peekRateLimit(failureKey, FAILURE_LIMIT) : { allowed: true, retryAfterSeconds: 0 };
+    if (!failureCheck.allowed) return tooManyRequests(BLOCKED_MESSAGE, failureCheck.retryAfterSeconds);
+
     const user = await prisma.user.findUnique({
       where: { email },
       include: { company: true },
     });
 
     if (!user) {
+      if (trackFailures) recordHit(failureKey, FAILURE_WINDOW_MS);
       return NextResponse.json({ message: 'Credenciais inválidas.' }, { status: 401 });
     }
 
     const passwordMatches = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatches) {
+      if (trackFailures) recordHit(failureKey, FAILURE_WINDOW_MS);
       return NextResponse.json({ message: 'Credenciais inválidas.' }, { status: 401 });
     }
+
+    resetRateLimit(failureKey);
 
     const token = signToken({
       userId: user.id,

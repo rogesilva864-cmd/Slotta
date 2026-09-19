@@ -4,9 +4,22 @@ import { prisma } from '@/lib/prisma';
 import { appointmentSchema } from '@/lib/validators';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { notifyOwnersNewAppointment } from '@/lib/owner-notifications';
+import { getClientIp, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
+
+const IP_LIMIT = { limit: 15, windowMs: 60 * 60 * 1000 };
+const PHONE_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 };
+const COMPANY_LIMIT = { limit: 80, windowMs: 60 * 60 * 1000 };
+const MAX_PENDING_PER_CUSTOMER = 3;
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const ipCheck = ip === 'unknown' ? { allowed: true, retryAfterSeconds: 0 } : takeRateLimit(`booking:ip:${ip}`, IP_LIMIT);
+    if (!ipCheck.allowed) {
+      console.warn(`[rate-limit] Agendamento bloqueado por excesso de tentativas do IP ${ip}.`);
+      return tooManyRequests('Muitas tentativas de agendamento. Tente novamente mais tarde.', ipCheck.retryAfterSeconds);
+    }
+
     const body = await request.json();
     const parsed = appointmentSchema.safeParse(body);
 
@@ -15,6 +28,24 @@ export async function POST(request: Request) {
     }
 
     const { companyId, serviceId, customerName, phone, email, date, startTime, notes } = parsed.data;
+    const phoneDigits = phone.replace(/\D/g, '');
+
+    const phoneCheck = takeRateLimit(`booking:phone:${companyId}:${phoneDigits}`, PHONE_LIMIT);
+    const companyCheck = takeRateLimit(`booking:company:${companyId}`, COMPANY_LIMIT);
+    const blocked = !phoneCheck.allowed ? phoneCheck : !companyCheck.allowed ? companyCheck : null;
+    if (blocked) {
+      return tooManyRequests('Muitas tentativas de agendamento. Tente novamente mais tarde.', blocked.retryAfterSeconds);
+    }
+
+    const pendingCount = await prisma.appointment.count({
+      where: { companyId, status: 'PENDING', customer: { id: `customer-${companyId}-${phoneDigits}` } },
+    });
+    if (pendingCount >= MAX_PENDING_PER_CUSTOMER) {
+      return NextResponse.json(
+        { message: `Você já tem ${MAX_PENDING_PER_CUSTOMER} pedidos aguardando confirmação. Aguarde a resposta da empresa antes de pedir outro.` },
+        { status: 429 }
+      );
+    }
 
     const service = await prisma.service.findFirst({
       where: { id: serviceId, companyId, active: true },

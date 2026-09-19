@@ -17,12 +17,12 @@ export const serviceSchema = z.object({
 export const appointmentSchema = z.object({
   companyId: z.string().min(1),
   serviceId: z.string().min(1),
-  customerName: z.string().min(2),
-  phone: z.string().min(8),
-  email: z.string().email().optional().or(z.literal('')),
-  date: z.string().min(1),
-  startTime: z.string().min(1),
-  notes: z.string().optional(),
+  customerName: z.string().trim().min(2).max(100),
+  phone: z.string().trim().min(8).max(25),
+  email: z.string().email().max(150).optional().or(z.literal('')),
+  date: z.string().min(1).max(10),
+  startTime: z.string().min(1).max(5),
+  notes: z.string().max(500).optional(),
 });
 
 export const registerSchema = z.object({
