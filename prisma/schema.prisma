@@ -28,6 +28,15 @@ model Company {
   reminderSetting ReminderSetting?
   reminders    Reminder[]
   reviewRequests ReviewRequest[]
+
+  // Assinatura (Stripe). "trial" é nosso estado inicial, antes de qualquer
+  // contato com o Stripe; os demais valores são o status bruto que o Stripe
+  // devolve (active, past_due, canceled, unpaid, ...).
+  subscriptionStatus   String    @default("trial")
+  trialEndsAt          DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  currentPeriodEnd     DateTime?
 }
 
 model User {

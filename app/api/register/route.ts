@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { registerSchema } from '@/lib/validators';
 import { signToken } from '@/lib/auth';
+import { trialEndsAtFromNow } from '@/lib/billing';
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
         phone: companyPhone || null,
         slug,
         description: companyDescription || null,
+        subscriptionStatus: 'trial',
+        trialEndsAt: trialEndsAtFromNow(),
       },
     });
 

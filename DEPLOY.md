@@ -100,6 +100,36 @@ ativar de novo. Push exige HTTPS (o Railway já fornece). No iPhone só
 funciona com o Slotta adicionado à tela inicial (iOS 16.4 ou mais novo).
 O dono ativa em **Painel → Lembretes → Avisos para você**.
 
+### Cobrança (Stripe)
+
+Toda empresa nova tem 14 dias de teste grátis, sem precisar de cartão. Depois
+disso, o painel bloqueia até assinar. Para ativar a cobrança de verdade:
+
+1. Crie uma conta em [dashboard.stripe.com](https://dashboard.stripe.com) e
+   complete os dados da sua empresa (a Stripe pede isso para liberar
+   pagamentos de verdade; sem isso, só funciona em modo de teste).
+2. Em **Product catalog → Add product**, crie um produto (ex: "Plano Slotta")
+   com um **preço recorrente mensal de R$ 59,90**. Copie o **Price ID**
+   (começa com `price_...`).
+3. Em **Developers → API keys**, copie a **Secret key** (começa com `sk_live_`
+   em produção, `sk_test_` em modo de teste).
+4. Em **Developers → Webhooks → Add endpoint**, use a URL
+   `https://SEU-DOMINIO/api/stripe/webhook`, selecione os eventos
+   `checkout.session.completed`, `customer.subscription.updated` e
+   `customer.subscription.deleted`, e copie o **Signing secret** (começa com
+   `whsec_...`).
+5. Adicione no Railway:
+
+```
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_PRICE_ID=price_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+O dono assina e gerencia tudo (trocar cartão, cancelar, ver faturas) em
+**Painel → Assinatura** — o cancelamento e a troca de cartão são feitos no
+próprio portal do Stripe, não é preciso construir nada disso à mão.
+
 ## 5. Popular o banco de produção (opcional)
 
 Se quiser começar com a empresa de demonstração já cadastrada, rode uma
