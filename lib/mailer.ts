@@ -141,6 +141,48 @@ ${data.bookingUrl}`,
   });
 }
 
+export async function sendAppointmentCancelledByClientEmail(
+  to: string,
+  data: { customerName: string; serviceName: string; date: string; startTime: string; panelUrl: string }
+) {
+  const line = `${data.customerName} cancelou o horário de ${data.serviceName} marcado para ${data.date} às ${data.startTime}.`;
+  return sendEmail({
+    to,
+    subject: 'Um cliente cancelou o agendamento',
+    text: `${line}\n\nVeja no painel:\n${data.panelUrl}`,
+    html: layout(
+      'Cliente cancelou o agendamento',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;">${escapeHtml(line)}</p>`,
+      { url: data.panelUrl, label: 'Abrir painel' }
+    ),
+  });
+}
+
+export async function sendAppointmentRescheduledEmail(
+  to: string,
+  data: {
+    customerName: string;
+    serviceName: string;
+    previousDate: string;
+    previousStartTime: string;
+    date: string;
+    startTime: string;
+    panelUrl: string;
+  }
+) {
+  const line = `${data.customerName} remarcou o horário de ${data.serviceName}: de ${data.previousDate} às ${data.previousStartTime} para ${data.date} às ${data.startTime}. O pedido está pendente de confirmação.`;
+  return sendEmail({
+    to,
+    subject: 'Um cliente remarcou o agendamento',
+    text: `${line}\n\nConfirme ou recuse no painel:\n${data.panelUrl}`,
+    html: layout(
+      'Cliente remarcou o agendamento',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;">${escapeHtml(line)}</p>`,
+      { url: data.panelUrl, label: 'Abrir painel' }
+    ),
+  });
+}
+
 export async function sendDailyDigestEmail(
   to: string,
   data: { dateLabel: string; items: { time: string; customerName: string; serviceName: string; status: string }[]; panelUrl: string }

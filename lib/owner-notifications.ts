@@ -1,6 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { sendPushToUser } from '@/lib/push';
-import { sendDailyDigestEmail, sendNewAppointmentEmail } from '@/lib/mailer';
+import {
+  sendAppointmentCancelledByClientEmail,
+  sendAppointmentRescheduledEmail,
+  sendDailyDigestEmail,
+  sendNewAppointmentEmail,
+} from '@/lib/mailer';
 
 const TIMEZONE = 'America/Sao_Paulo';
 const DIGEST_START_MINUTES = 7 * 60 + 30;
@@ -61,6 +66,85 @@ export async function notifyOwnersNewAppointment(appointmentId: string) {
         }
       } catch (error) {
         console.error(`[owner-notifications] Falha ao avisar ${user.email}:`, error);
+      }
+    })
+  );
+}
+
+/** Avisa os donos que o próprio cliente cancelou um agendamento (self-service). */
+export async function notifyOwnersAppointmentCancelledByClient(appointmentId: string) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: { customer: true, service: true, company: { include: { users: true } } },
+  });
+  if (!appointment) return;
+
+  const panelUrl = `${appUrl()}/admin`;
+  const summary = `${appointment.customer.name} cancelou ${appointment.service.name} de ${appointment.date} às ${appointment.startTime}.`;
+
+  await Promise.all(
+    appointment.company.users.map(async (user) => {
+      try {
+        const delivered = await sendPushToUser(user.id, {
+          title: 'Cliente cancelou o agendamento',
+          body: summary,
+          url: '/admin',
+          tag: `appointment-${appointment.id}`,
+        });
+
+        if (delivered === 0 && user.notifyEmailFallback) {
+          await sendAppointmentCancelledByClientEmail(user.email, {
+            customerName: appointment.customer.name,
+            serviceName: appointment.service.name,
+            date: appointment.date,
+            startTime: appointment.startTime,
+            panelUrl,
+          });
+        }
+      } catch (error) {
+        console.error(`[owner-notifications] Falha ao avisar ${user.email} do cancelamento:`, error);
+      }
+    })
+  );
+}
+
+/** Avisa os donos que o próprio cliente remarcou um agendamento (self-service, volta para PENDING). */
+export async function notifyOwnersAppointmentRescheduled(
+  appointmentId: string,
+  previous: { date: string; startTime: string }
+) {
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    include: { customer: true, service: true, company: { include: { users: true } } },
+  });
+  if (!appointment) return;
+
+  const panelUrl = `${appUrl()}/admin`;
+  const summary = `${appointment.customer.name} remarcou ${appointment.service.name}: ${previous.date} ${previous.startTime} → ${appointment.date} ${appointment.startTime}.`;
+
+  await Promise.all(
+    appointment.company.users.map(async (user) => {
+      try {
+        const delivered = await sendPushToUser(user.id, {
+          title: 'Cliente remarcou o agendamento',
+          body: summary,
+          url: '/admin',
+          tag: `appointment-${appointment.id}`,
+        });
+
+        if (delivered === 0 && user.notifyEmailFallback) {
+          await sendAppointmentRescheduledEmail(user.email, {
+            customerName: appointment.customer.name,
+            serviceName: appointment.service.name,
+            previousDate: previous.date,
+            previousStartTime: previous.startTime,
+            date: appointment.date,
+            startTime: appointment.startTime,
+            panelUrl,
+          });
+        }
+      } catch (error) {
+        console.error(`[owner-notifications] Falha ao avisar ${user.email} da remarcação:`, error);
       }
     })
   );

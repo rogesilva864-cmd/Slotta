@@ -59,6 +59,16 @@ export const resetPasswordSchema = z
     path: ['confirmPassword'],
   });
 
+export const selfCancelSchema = z.object({
+  contact: z.string().trim().min(3).max(150),
+});
+
+export const selfRescheduleSchema = z.object({
+  contact: z.string().trim().min(3).max(150),
+  date: z.string().min(1).max(10),
+  startTime: z.string().min(1).max(5),
+});
+
 export const availabilityQuerySchema = z.object({
   companyId: z.string().min(1),
   serviceId: z.string().min(1),
