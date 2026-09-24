@@ -1,12 +1,32 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Appointment, NotificationItem } from '../types';
+import type { NotificationItem } from '../types';
 import { formatCurrency, formatDate, statusClass, statusLabel } from '../types';
 import { QuickBlockCard } from '../quick-block-card';
 
+type RecentAppointment = {
+  id: string;
+  date: string;
+  startTime: string;
+  price: number;
+  status: string;
+  service: { name: string };
+  customer: { name: string };
+};
+
+type DashboardData = {
+  totalAppointments: number;
+  pending: number;
+  confirmed: number;
+  billingThisMonth: number;
+  recentAppointments: RecentAppointment[];
+};
+
+const EMPTY_DASHBOARD: DashboardData = { totalAppointments: 0, pending: 0, confirmed: 0, billingThisMonth: 0, recentAppointments: [] };
+
 export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments' | 'calendar' | 'availability') => void }) {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardData>(EMPTY_DASHBOARD);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -16,16 +36,22 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
 
     const loadData = async () => {
       setLoading(true);
-      const [appointmentsResponse, notificationsResponse] = await Promise.all([
-        fetch('/api/admin/appointments'),
+      const [dashboardResponse, notificationsResponse] = await Promise.all([
+        fetch('/api/admin/dashboard'),
         fetch('/api/notifications'),
       ]);
 
-      const appointmentsData = await appointmentsResponse.json();
+      const dashboardData = await dashboardResponse.json();
       const notificationsData = await notificationsResponse.json();
 
       if (!active) return;
-      setAppointments(Array.isArray(appointmentsData.appointments) ? appointmentsData.appointments : []);
+      setDashboard({
+        totalAppointments: dashboardData.totalAppointments ?? 0,
+        pending: dashboardData.pending ?? 0,
+        confirmed: dashboardData.confirmed ?? 0,
+        billingThisMonth: dashboardData.billingThisMonth ?? 0,
+        recentAppointments: Array.isArray(dashboardData.recentAppointments) ? dashboardData.recentAppointments : [],
+      });
       setNotifications(Array.isArray(notificationsData.notifications) ? notificationsData.notifications : []);
       setLoading(false);
     };
@@ -36,21 +62,14 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
     };
   }, [refreshKey]);
 
-  const pending = appointments.filter((appointment) => appointment.status === 'PENDING').length;
-  const isConfirmedOrDone = (status: string) => status === 'CONFIRMED' || status === 'COMPLETED';
-  const confirmed = appointments.filter((appointment) => isConfirmedOrDone(appointment.status)).length;
-  const billing = appointments
-    .filter((appointment) => isConfirmedOrDone(appointment.status))
-    .reduce((total, appointment) => total + appointment.price, 0);
+  const monthLabel = new Date().toLocaleDateString('pt-BR', { month: 'long' });
 
   const cards = [
-    { label: 'Total de agendamentos', value: String(appointments.length) },
-    { label: 'Pendentes', value: String(pending) },
-    { label: 'Confirmados', value: String(confirmed) },
-    { label: 'Faturamento confirmado', value: formatCurrency(billing) },
+    { label: 'Total de agendamentos', value: String(dashboard.totalAppointments) },
+    { label: 'Pendentes', value: String(dashboard.pending) },
+    { label: 'Confirmados', value: String(dashboard.confirmed) },
+    { label: `Faturamento de ${monthLabel}`, value: formatCurrency(dashboard.billingThisMonth) },
   ];
-
-  const recentAppointments = appointments.slice(0, 6);
 
   return (
     <div className="space-y-6">
@@ -76,11 +95,11 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
 
           <div className="mt-4 space-y-3">
             {loading ? <p className="text-sm text-slate-300">Carregando agendamentos...</p> : null}
-            {!loading && recentAppointments.length === 0 ? (
+            {!loading && dashboard.recentAppointments.length === 0 ? (
               <p className="text-sm text-slate-300">Nenhum agendamento registrado.</p>
             ) : null}
 
-            {recentAppointments.map((appointment) => (
+            {dashboard.recentAppointments.map((appointment) => (
               <div key={appointment.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <strong>{appointment.customer.name}</strong>
