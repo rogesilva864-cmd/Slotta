@@ -52,7 +52,7 @@ export function renderWhatsappTemplate(templateType: WhatsappTemplateType, varia
         `🔔 *Abriu um horário!*\n\n` +
         `Olá, ${variables.customerName}! Você estava na lista de espera da *${variables.companyName}* e um horário de ${variables.serviceName} ` +
         `abriu para o dia ${variables.date}. Quem reservar primeiro garante a vaga:\n\n` +
-        `${variables.bookingUrl}`
+        `${variables.bookingUrl}\n\nCorra, esses horários costumam sair rápido!`
       );
 
     default:

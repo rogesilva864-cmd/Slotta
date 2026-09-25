@@ -111,7 +111,9 @@ lista de espera é avisado por e-mail (se informou um) e, se você criar o
 template abaixo, também por WhatsApp. Nome `waitlist_available`, idioma
 Português (BR), cinco variáveis nesta ordem:
 
-> Olá {{1}}! Você estava na lista de espera da {{2}} e um horário de {{3}} abriu para o dia {{4}}. Quem reservar primeiro garante a vaga: {{5}}
+> Olá {{1}}! Você estava na lista de espera da {{2}} e um horário de {{3}} abriu para o dia {{4}}. Quem reservar primeiro garante a vaga: {{5}} Corra, esses horários costumam sair rápido!
+
+A Meta não aceita variável no começo nem no fim do corpo do template, por isso a frase final depois da {{5}}.
 
 Exemplos para a Meta: {{1}} = "Maria", {{2}} = "Barbearia JB", {{3}} = "Corte", {{4}} = "27/09/2026", {{5}} = "https://slotta.velyxon.com.br/agendar/barbearia-jb?data=2026-09-27".
 
