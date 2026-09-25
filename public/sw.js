@@ -18,7 +18,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'Slotta', {
       body: data.body || '',
       icon: '/logo-agenda.jpeg',
-      badge: '/logo-agenda.jpeg',
+      badge: '/badge-notificacao.png',
       tag: data.tag,
       data: { url: data.url || '/admin' },
     })
