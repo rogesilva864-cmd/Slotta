@@ -44,7 +44,9 @@ const NAV_ITEMS: { key: TabKey; label: string; icon: typeof LayoutDashboard }[] 
   { key: 'settings', label: 'Configurações', icon: Settings },
 ];
 
-export function AdminApp({ company, admin }: { company: AdminCompany; admin: AdminUser }) {
+export type TrialWarning = { daysLeft: number; endsAt: string };
+
+export function AdminApp({ company, admin, trialWarning }: { company: AdminCompany; admin: AdminUser; trialWarning: TrialWarning | null }) {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -124,6 +126,18 @@ export function AdminApp({ company, admin }: { company: AdminCompany; admin: Adm
               <ExternalLink size={16} /> Página pública
             </a>
           </header>
+
+          {trialWarning && activeTab !== 'billing' ? (
+            <div className="flex flex-col gap-3 border-b border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between lg:px-8" role="status">
+              <p className="text-amber-100">
+                <strong>Seu teste grátis termina {trialWarning.daysLeft <= 1 ? 'em menos de 24 horas' : `em ${trialWarning.daysLeft} dias`}</strong>{' '}
+                ({new Date(trialWarning.endsAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}). Assine para não perder o acesso ao painel — seus dados ficam guardados.
+              </p>
+              <button type="button" onClick={() => selectTab('billing')} className="btn-primary shrink-0">
+                Assinar agora
+              </button>
+            </div>
+          ) : null}
 
           <div className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
             {activeTab === 'dashboard' ? <DashboardPanel onNavigate={selectTab} /> : null}

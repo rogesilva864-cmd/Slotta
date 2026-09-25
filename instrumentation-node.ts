@@ -21,6 +21,7 @@ export async function startWorkers() {
   const { processBackups } = await import('@/lib/backup');
   const { processReviewRequests } = await import('@/lib/reviews/service');
   const { processWaitlist } = await import('@/lib/waitlist/service');
+  const { processTrialNotices } = await import('@/lib/trial-notices');
 
   const intervalSeconds = Number(process.env.REMINDER_WORKER_INTERVAL_SECONDS || 60);
   const intervalMs = Math.max(15, intervalSeconds) * 1000;
@@ -59,6 +60,12 @@ export async function startWorkers() {
       if (waitlist.notified > 0) console.log(`[waitlist] pessoas avisadas=${waitlist.notified}`);
     } catch (error) {
       console.error('[waitlist] Erro ao processar lista de espera:', error);
+    }
+    try {
+      const trial = await processTrialNotices();
+      if (trial.sent > 0) console.log(`[trial-notices] avisos de fim de teste enviados=${trial.sent}`);
+    } catch (error) {
+      console.error('[trial-notices] Erro ao processar avisos de fim de teste:', error);
     }
     try {
       await processBackups();

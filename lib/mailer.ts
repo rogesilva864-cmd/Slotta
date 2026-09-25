@@ -135,6 +135,28 @@ export async function sendWaitlistAvailableEmail(
   });
 }
 
+export async function sendTrialEndingEmail(
+  to: string,
+  data: { adminName: string; companyName: string; daysLeft: number; endsAtLabel: string; panelUrl: string }
+) {
+  const soon = data.daysLeft <= 1;
+  const when = soon ? 'em menos de 24 horas' : `em ${data.daysLeft} dias`;
+  const subject = soon ? 'Seu teste grátis do Slotta termina em breve' : `Seu teste grátis do Slotta termina em ${data.daysLeft} dias`;
+  const line = `O teste grátis da ${data.companyName} termina ${when} (${data.endsAtLabel}). Para continuar usando o painel sem interrupção, assine o plano — leva menos de 2 minutos.`;
+  const reassurance = 'Seus clientes, serviços e agendamentos continuam salvos; só o acesso ao painel é pausado se a assinatura não for feita.';
+
+  return sendEmail({
+    to,
+    subject,
+    text: `Olá, ${data.adminName}!\n\n${line}\n${reassurance}\n\nAssinar agora:\n${data.panelUrl}`,
+    html: layout(
+      soon ? 'Seu teste termina em breve' : `Seu teste termina em ${data.daysLeft} dias`,
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;">Olá, ${escapeHtml(data.adminName)}!</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;">${escapeHtml(line)}</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;">${escapeHtml(reassurance)}</p>`,
+      { url: data.panelUrl, label: 'Assinar agora' }
+    ),
+  });
+}
+
 export async function sendAppointmentCancelledEmail(
   to: string,
   data: { customerName: string; companyName: string; serviceName: string; date: string; startTime: string; reason: string; bookingUrl: string }

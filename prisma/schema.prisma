@@ -38,6 +38,8 @@ model Company {
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
   currentPeriodEnd     DateTime?
+  // 0 = nenhum aviso de fim de teste enviado; 1 = aviso de 3 dias; 2 = aviso das últimas 24h.
+  trialNoticeStage     Int       @default(0)
 }
 
 model User {
