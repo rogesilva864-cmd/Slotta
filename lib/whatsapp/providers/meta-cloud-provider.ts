@@ -8,6 +8,7 @@ const TEMPLATE_PARAMETER_ORDER: Record<WhatsappTemplateType, string[]> = {
   APPOINTMENT_REMINDER: ['customerName', 'companyName', 'serviceName', 'date', 'startTime', 'intervalLabel'],
   APPOINTMENT_CANCELLED: ['customerName', 'companyName', 'serviceName', 'date', 'startTime', 'reason'],
   REVIEW_REQUEST: ['customerName', 'companyName', 'reviewUrl'],
+  WAITLIST_AVAILABLE: ['customerName', 'companyName', 'serviceName', 'date', 'bookingUrl'],
 };
 
 const TEMPLATE_ENV_VAR: Record<WhatsappTemplateType, string> = {
@@ -15,6 +16,7 @@ const TEMPLATE_ENV_VAR: Record<WhatsappTemplateType, string> = {
   APPOINTMENT_REMINDER: 'WHATSAPP_TEMPLATE_REMINDER',
   APPOINTMENT_CANCELLED: 'WHATSAPP_TEMPLATE_CANCELLED',
   REVIEW_REQUEST: 'WHATSAPP_TEMPLATE_REVIEW',
+  WAITLIST_AVAILABLE: 'WHATSAPP_TEMPLATE_WAITLIST',
 };
 
 const DEFAULT_TEMPLATE_NAME: Record<WhatsappTemplateType, string> = {
@@ -22,6 +24,7 @@ const DEFAULT_TEMPLATE_NAME: Record<WhatsappTemplateType, string> = {
   APPOINTMENT_REMINDER: 'appointment_reminder',
   APPOINTMENT_CANCELLED: 'appointment_cancelled',
   REVIEW_REQUEST: 'review_request',
+  WAITLIST_AVAILABLE: 'waitlist_available',
 };
 
 /**

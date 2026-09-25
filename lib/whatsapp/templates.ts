@@ -47,6 +47,14 @@ export function renderWhatsappTemplate(templateType: WhatsappTemplateType, varia
         `${variables.reviewUrl}`
       );
 
+    case 'WAITLIST_AVAILABLE':
+      return (
+        `🔔 *Abriu um horário!*\n\n` +
+        `Olá, ${variables.customerName}! Você estava na lista de espera da *${variables.companyName}* e um horário de ${variables.serviceName} ` +
+        `abriu para o dia ${variables.date}. Quem reservar primeiro garante a vaga:\n\n` +
+        `${variables.bookingUrl}`
+      );
+
     default:
       return '';
   }

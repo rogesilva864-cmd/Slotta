@@ -20,6 +20,7 @@ export async function startWorkers() {
   const { processDailyDigests } = await import('@/lib/owner-notifications');
   const { processBackups } = await import('@/lib/backup');
   const { processReviewRequests } = await import('@/lib/reviews/service');
+  const { processWaitlist } = await import('@/lib/waitlist/service');
 
   const intervalSeconds = Number(process.env.REMINDER_WORKER_INTERVAL_SECONDS || 60);
   const intervalMs = Math.max(15, intervalSeconds) * 1000;
@@ -52,6 +53,12 @@ export async function startWorkers() {
       }
     } catch (error) {
       console.error('[reviews] Erro ao processar pedidos de avaliação:', error);
+    }
+    try {
+      const waitlist = await processWaitlist();
+      if (waitlist.notified > 0) console.log(`[waitlist] pessoas avisadas=${waitlist.notified}`);
+    } catch (error) {
+      console.error('[waitlist] Erro ao processar lista de espera:', error);
     }
     try {
       await processBackups();

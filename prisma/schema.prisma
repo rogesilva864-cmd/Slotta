@@ -28,6 +28,7 @@ model Company {
   reminderSetting ReminderSetting?
   reminders    Reminder[]
   reviewRequests ReviewRequest[]
+  waitlistEntries WaitlistEntry[]
 
   // Assinatura (Stripe). "trial" é nosso estado inicial, antes de qualquer
   // contato com o Stripe; os demais valores são o status bruto que o Stripe
@@ -96,6 +97,7 @@ model Service {
 
   company         Company @relation(fields: [companyId], references: [id])
   appointments   Appointment[]
+  waitlistEntries WaitlistEntry[]
 }
 
 model Customer {
@@ -237,4 +239,26 @@ model ReviewRequest {
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
   @@index([companyId, createdAt])
+}
+
+model WaitlistEntry {
+  id           String    @id @default(cuid())
+  companyId    String
+  serviceId    String
+  customerName String
+  phone        String
+  phoneDigits  String
+  email        String?
+  date         String
+  status       String    @default("WAITING")
+  notifiedAt   DateTime?
+  channels     String?
+  createdAt    DateTime  @default(now())
+
+  company      Company   @relation(fields: [companyId], references: [id])
+  service      Service   @relation(fields: [serviceId], references: [id])
+
+  @@unique([companyId, serviceId, date, phoneDigits])
+  @@index([status, date])
+  @@index([companyId, date])
 }

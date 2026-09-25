@@ -115,6 +115,26 @@ export async function sendReviewRequestEmail(
   });
 }
 
+export async function sendWaitlistAvailableEmail(
+  to: string,
+  data: { customerName: string; companyName: string; serviceName: string; date: string; bookingUrl: string }
+) {
+  const [year, month, day] = data.date.split('-');
+  const when = `${day}/${month}/${year}`;
+  const line = `Um horário de ${data.serviceName} abriu na ${data.companyName} para o dia ${when}.`;
+
+  return sendEmail({
+    to,
+    subject: `Abriu um horário na ${data.companyName}!`,
+    text: `Olá, ${data.customerName}!\n\nVocê estava na lista de espera. ${line}\nQuem reservar primeiro garante a vaga:\n${data.bookingUrl}`,
+    html: layout(
+      'Abriu um horário!',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;">Olá, ${escapeHtml(data.customerName)}! Você estava na lista de espera.</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;">${escapeHtml(line)} Quem reservar primeiro garante a vaga.</p>`,
+      { url: data.bookingUrl, label: 'Reservar meu horário' }
+    ),
+  });
+}
+
 export async function sendAppointmentCancelledEmail(
   to: string,
   data: { customerName: string; companyName: string; serviceName: string; date: string; startTime: string; reason: string; bookingUrl: string }

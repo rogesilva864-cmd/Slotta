@@ -36,6 +36,7 @@ variáveis numeradas `{{1}}`, `{{2}}`, ... **exatamente nessa ordem**:
 | `appointment_reminder` | nome do cliente, nome da empresa, nome do serviço, data, horário, "faltam X" |
 | `appointment_cancelled` | nome do cliente, nome da empresa, nome do serviço, data, horário, motivo |
 | `review_request` (opcional, só se usar o pedido de avaliação) | nome do cliente, nome da empresa, link de avaliação |
+| `waitlist_available` (opcional, só se usar a lista de espera) | nome do cliente, nome da empresa, nome do serviço, data (dd/mm/aaaa), link para agendar |
 
 Exemplo de corpo para `appointment_reminder`:
 
@@ -64,6 +65,7 @@ WHATSAPP_TEMPLATE_CONFIRMED=appointment_confirmed
 WHATSAPP_TEMPLATE_REMINDER=appointment_reminder
 WHATSAPP_TEMPLATE_CANCELLED=appointment_cancelled
 WHATSAPP_TEMPLATE_REVIEW=review_request
+WHATSAPP_TEMPLATE_WAITLIST=waitlist_available
 ```
 
 Sem `WHATSAPP_PROVIDER=meta`, o sistema continua no modo de log (nenhuma
@@ -101,3 +103,18 @@ Utility), o que muda o preço por mensagem e, em alguns casos, exige que o
 cliente tenha aceitado receber esse tipo de contato. Enquanto ele não estiver
 aprovado, o envio por WhatsApp falha (registrado como falha no painel) e só o
 e-mail é enviado.
+
+## Template opcional: aviso da lista de espera
+
+Quando um horário abre em um dia que estava lotado, o cliente que entrou na
+lista de espera é avisado por e-mail (se informou um) e, se você criar o
+template abaixo, também por WhatsApp. Nome `waitlist_available`, idioma
+Português (BR), cinco variáveis nesta ordem:
+
+> Olá {{1}}! Você estava na lista de espera da {{2}} e um horário de {{3}} abriu para o dia {{4}}. Quem reservar primeiro garante a vaga: {{5}}
+
+Exemplos para a Meta: {{1}} = "Maria", {{2}} = "Barbearia JB", {{3}} = "Corte", {{4}} = "27/09/2026", {{5}} = "https://slotta.velyxon.com.br/agendar/barbearia-jb?data=2026-09-27".
+
+Sem o template aprovado, o envio por WhatsApp falha e só o e-mail é enviado;
+se nenhum canal funcionar, o painel avisa o dono para chamar o cliente
+manualmente (aba **Lista de espera**).

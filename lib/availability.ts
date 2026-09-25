@@ -30,7 +30,14 @@ export function overlapsBreak(slotStartMinutes: number, durationMinutes: number,
   return slotStartMinutes < timeToMinutes(breakEnd) && slotStartMinutes + durationMinutes > timeToMinutes(breakStart);
 }
 
-export async function getAvailableSlots(companyId: string, serviceId: string, date: string, now: Date = new Date()) {
+/** `ignoreBookings` devolve os horários que existiriam sem agendamentos nem bloqueios (usado para saber se o dia "atende" de fato). */
+export async function getAvailableSlots(
+  companyId: string,
+  serviceId: string,
+  date: string,
+  now: Date = new Date(),
+  options: { ignoreBookings?: boolean } = {}
+) {
   const service = await prisma.service.findFirst({
     where: { id: serviceId, companyId, active: true },
   });
@@ -84,7 +91,7 @@ export async function getAvailableSlots(companyId: string, serviceId: string, da
       return current < appointmentEnd && current + duration > appointmentStart;
     });
 
-    if (!isBlocked && !isBusy) {
+    if (options.ignoreBookings || (!isBlocked && !isBusy)) {
       slots.push(`${slot} - ${slotEnd}`);
     }
   }

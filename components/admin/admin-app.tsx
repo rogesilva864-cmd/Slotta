@@ -15,6 +15,7 @@ import {
   X,
   ExternalLink,
   CreditCard,
+  Hourglass,
 } from 'lucide-react';
 import type { AdminCompany, AdminUser } from './types';
 import { DashboardPanel } from './panels/dashboard-panel';
@@ -25,9 +26,10 @@ import { CustomersPanel } from './panels/customers-panel';
 import { AvailabilityPanel } from './panels/availability-panel';
 import { RemindersPanel } from './panels/reminders-panel';
 import { BillingPanel } from './panels/billing-panel';
+import { WaitlistPanel } from './panels/waitlist-panel';
 import { SettingsPanel } from './panels/settings-panel';
 
-type TabKey = 'dashboard' | 'appointments' | 'calendar' | 'services' | 'customers' | 'availability' | 'reminders' | 'billing' | 'settings';
+type TabKey = 'dashboard' | 'appointments' | 'calendar' | 'services' | 'customers' | 'availability' | 'reminders' | 'waitlist' | 'billing' | 'settings';
 
 const NAV_ITEMS: { key: TabKey; label: string; icon: typeof LayoutDashboard }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -37,6 +39,7 @@ const NAV_ITEMS: { key: TabKey; label: string; icon: typeof LayoutDashboard }[] 
   { key: 'customers', label: 'Clientes', icon: Users },
   { key: 'availability', label: 'Disponibilidade', icon: Clock },
   { key: 'reminders', label: 'Lembretes', icon: MessageCircle },
+  { key: 'waitlist', label: 'Lista de espera', icon: Hourglass },
   { key: 'billing', label: 'Assinatura', icon: CreditCard },
   { key: 'settings', label: 'Configurações', icon: Settings },
 ];
@@ -130,6 +133,7 @@ export function AdminApp({ company, admin }: { company: AdminCompany; admin: Adm
             {activeTab === 'customers' ? <CustomersPanel /> : null}
             {activeTab === 'availability' ? <AvailabilityPanel /> : null}
             {activeTab === 'reminders' ? <RemindersPanel /> : null}
+            {activeTab === 'waitlist' ? <WaitlistPanel /> : null}
             {activeTab === 'billing' ? <BillingPanel /> : null}
             {activeTab === 'settings' ? <SettingsPanel company={company} admin={admin} /> : null}
           </div>

@@ -74,3 +74,12 @@ export const availabilityQuerySchema = z.object({
   serviceId: z.string().min(1),
   date: z.string().min(1),
 });
+
+export const waitlistSchema = z.object({
+  companyId: z.string().min(1),
+  serviceId: z.string().min(1),
+  customerName: z.string().trim().min(2).max(100),
+  phone: z.string().trim().min(8).max(25),
+  email: z.string().email().max(150).optional().or(z.literal('')),
+  date: z.string().min(1).max(10),
+});

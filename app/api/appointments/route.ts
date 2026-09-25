@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { appointmentSchema } from '@/lib/validators';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { notifyOwnersNewAppointment } from '@/lib/owner-notifications';
+import { clearWaitlistForBooking } from '@/lib/waitlist/service';
 import { getClientIp, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
 
 const IP_LIMIT = { limit: 15, windowMs: 60 * 60 * 1000 };
@@ -89,6 +90,10 @@ export async function POST(request: Request) {
         status: 'PENDING',
         notes: notes || null,
       },
+    });
+
+    void clearWaitlistForBooking({ companyId, phoneDigits, date }).catch((error) => {
+      console.error('[appointments] Falha ao limpar a lista de espera:', error);
     });
 
     await prisma.notification.create({

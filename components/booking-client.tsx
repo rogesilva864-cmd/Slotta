@@ -17,11 +17,35 @@ type Company = {
   description: string | null;
 };
 
-export function BookingClient({ company, services }: { company: Company; services: Service[] }) {
-  const [selectedServiceId, setSelectedServiceId] = useState(services[0]?.id ?? '');
-  const [selectedDate, setSelectedDate] = useState<string>('');
+/** Data de hoje (AAAA-MM-DD) no horário de Brasília, para o cliente nunca ver "hoje" adiantado à noite. */
+function brazilToday() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+}
+
+function addDays(date: string, days: number) {
+  const shifted = new Date(`${date}T12:00:00Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
+}
+
+export function BookingClient({
+  company,
+  services,
+  initialDate,
+  initialServiceId,
+}: {
+  company: Company;
+  services: Service[];
+  initialDate?: string;
+  initialServiceId?: string;
+}) {
+  const [selectedServiceId, setSelectedServiceId] = useState(initialServiceId ?? services[0]?.id ?? '');
+  const [selectedDate, setSelectedDate] = useState<string>(initialDate ?? '');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [slots, setSlots] = useState<string[]>([]);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [waitlistMessage, setWaitlistMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [joiningWaitlist, setJoiningWaitlist] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,19 +62,21 @@ export function BookingClient({ company, services }: { company: Company; service
   );
 
   const dateOptions = useMemo(() => {
-    const dates: string[] = [];
-    const start = new Date();
-    for (let i = 0; i < 7; i += 1) {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
-      dates.push(date.toISOString().slice(0, 10));
+    const today = brazilToday();
+    const dates = Array.from({ length: 7 }, (_, index) => addDays(today, index));
+    // Link de aviso da lista de espera pode apontar para um dia além da semana exibida.
+    if (initialDate && initialDate >= today && !dates.includes(initialDate)) {
+      dates.push(initialDate);
+      dates.sort();
     }
     return dates;
-  }, []);
+  }, [initialDate]);
 
   useEffect(() => {
+    setWaitlistMessage(null);
     if (!selectedServiceId || !selectedDate) {
       setSlots([]);
+      setWaitlistOpen(false);
       setSelectedTime('');
       return;
     }
@@ -66,9 +92,11 @@ export function BookingClient({ company, services }: { company: Company; service
 
         const data = await response.json();
         setSlots(Array.isArray(data.slots) ? data.slots : []);
+        setWaitlistOpen(Boolean(data.waitlistOpen));
         setSelectedTime('');
       } catch {
         setSlots([]);
+        setWaitlistOpen(false);
       } finally {
         setLoadingSlots(false);
       }
@@ -116,6 +144,37 @@ export function BookingClient({ company, services }: { company: Company; service
     setForm({ customerName: '', phone: '', email: '', notes: '' });
     setSelectedTime('');
     setSelectedDate(dateOptions[0]);
+  };
+
+  const handleJoinWaitlist = async () => {
+    if (!selectedService || !selectedDate) return;
+    if (form.customerName.trim().length < 2 || form.phone.replace(/\D/g, '').length < 10) {
+      setWaitlistMessage({ ok: false, text: 'Preencha seu nome e telefone (com DDD) para entrar na lista.' });
+      return;
+    }
+
+    setJoiningWaitlist(true);
+    setWaitlistMessage(null);
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyId: company.id,
+          serviceId: selectedService.id,
+          customerName: form.customerName,
+          phone: form.phone,
+          email: form.email,
+          date: selectedDate,
+        }),
+      });
+      const data = await response.json();
+      setWaitlistMessage({ ok: response.ok, text: data.message || (response.ok ? 'Você está na lista de espera.' : 'Não foi possível entrar na lista de espera.') });
+    } catch {
+      setWaitlistMessage({ ok: false, text: 'Não foi possível entrar na lista de espera.' });
+    } finally {
+      setJoiningWaitlist(false);
+    }
   };
 
   const selectedEndTime = selectedService && selectedTime ? selectedTime.split(' - ')[1] : null;
@@ -206,6 +265,37 @@ export function BookingClient({ company, services }: { company: Company; service
                 </button>
               ))}
             </div>
+
+            {!loadingSlots && slots.length === 0 && waitlistOpen ? (
+              <div className="mt-5 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4" data-testid="waitlist-card">
+                <p className="font-semibold text-amber-100">Dia lotado? Entre na lista de espera</p>
+                <p className="mt-1 text-sm text-slate-300">
+                  Se alguém cancelar, avisamos você primeiro por e-mail ou WhatsApp. Quem reservar antes garante o horário.
+                </p>
+                <div className="mt-4 grid gap-3">
+                  <label className="field">
+                    <span>Nome completo</span>
+                    <input type="text" autoComplete="name" value={form.customerName} onChange={(event) => setForm((prev) => ({ ...prev, customerName: event.target.value }))} placeholder="Seu nome completo" />
+                  </label>
+                  <label className="field">
+                    <span>Telefone / WhatsApp</span>
+                    <input type="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="(11) 99999-9999" />
+                  </label>
+                  <label className="field">
+                    <span>
+                      E-mail <span className="font-normal text-cyan-300">(recomendado)</span>
+                    </span>
+                    <input type="email" autoComplete="email" inputMode="email" value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} placeholder="seu@email.com" />
+                  </label>
+                </div>
+                {waitlistMessage ? (
+                  <p className={`mt-3 text-sm ${waitlistMessage.ok ? 'text-emerald-300' : 'text-rose-300'}`}>{waitlistMessage.text}</p>
+                ) : null}
+                <button type="button" onClick={handleJoinWaitlist} disabled={joiningWaitlist} className="btn-primary mt-4 disabled:cursor-not-allowed disabled:opacity-70">
+                  {joiningWaitlist ? 'Entrando...' : 'Avisar-me se abrir horário'}
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <aside className="card p-5">
