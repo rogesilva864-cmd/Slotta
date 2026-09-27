@@ -157,6 +157,25 @@ export async function sendTrialEndingEmail(
   });
 }
 
+export async function sendTrialExpiredEmail(
+  to: string,
+  data: { adminName: string; companyName: string; panelUrl: string }
+) {
+  const line = `O teste grátis da ${data.companyName} terminou e o acesso ao painel está pausado. Assine o plano para voltar a usar tudo de onde parou — leva menos de 2 minutos.`;
+  const reassurance = 'Seus clientes, serviços e agendamentos continuam salvos e voltam assim que a assinatura for feita.';
+
+  return sendEmail({
+    to,
+    subject: 'Seu teste grátis do Slotta terminou',
+    text: `Olá, ${data.adminName}!\n\n${line}\n${reassurance}\n\nAssinar e voltar ao painel:\n${data.panelUrl}`,
+    html: layout(
+      'Seu teste grátis terminou',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;">Olá, ${escapeHtml(data.adminName)}!</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;">${escapeHtml(line)}</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;">${escapeHtml(reassurance)}</p>`,
+      { url: data.panelUrl, label: 'Assinar e voltar ao painel' }
+    ),
+  });
+}
+
 export async function sendAppointmentCancelledEmail(
   to: string,
   data: { customerName: string; companyName: string; serviceName: string; date: string; startTime: string; reason: string; bookingUrl: string }
