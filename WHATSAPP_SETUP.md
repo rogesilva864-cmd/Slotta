@@ -20,7 +20,43 @@ Para envio real, o Slotta já vem pronto para a **API oficial do WhatsApp**
    - Um **token de acesso temporário** (válido por 24h) — bom para testar rápido, mas não para produção.
 5. Para produção, gere um **token de acesso permanente**: em **System Users** (Configurações do Negócio → Usuários do sistema), crie um usuário de sistema, gere um token com a permissão `whatsapp_business_messaging`, e use esse valor em `WHATSAPP_API_TOKEN`.
 
-## 2. Aprovar os templates de mensagem
+## 2. Trocar o número de teste por um número real
+
+Enquanto usa o número de teste que a Meta dá de graça, só os até 5
+destinatários cadastrados como teste recebem mensagem — clientes de
+verdade das empresas não vão receber nada. Para atender clientes reais,
+troque pelo seu próprio número:
+
+1. Consiga um número que **não esteja em uso em nenhum WhatsApp** (nem
+   pessoal, nem WhatsApp Business App). Pode ser um chip pré-pago comum,
+   comprado só para isso — não precisa de plano especial. Esse será o
+   número único do Slotta, usado por todas as empresas que usarem o
+   sistema (o nome de cada empresa aparece no texto da mensagem, mas o
+   contato de WhatsApp que o cliente vê é sempre o do Slotta).
+2. No **WhatsApp Manager** (ou App Dashboard → WhatsApp → API Setup),
+   adicione esse número à sua conta.
+3. A Meta manda um código de verificação por SMS ou ligação para esse
+   número — informe o código na tela para confirmar que é seu.
+4. Nesse momento você define um **PIN de verificação em duas etapas**.
+   Guarde esse PIN: ele é pedido de novo se for preciso reautenticar o
+   número no futuro (troca de servidor, problema de conexão, etc.).
+5. Depois de registrado, o número passa a ter um **Phone Number ID**
+   diferente do número de teste. Troque a variável
+   `WHATSAPP_PHONE_NUMBER_ID` no Railway para esse novo valor — o
+   `WHATSAPP_API_TOKEN` (token do usuário de sistema) continua o mesmo.
+
+Depois desse passo, o chip não precisa mais ficar em nenhum celular:
+a Meta usa o número no servidor deles (esse é o diferencial da Cloud API
+frente ao WhatsApp Business App comum, que exige o celular sempre ligado).
+
+**Limite de mensagens:** sem enviar os documentos da empresa para
+verificação da Meta, o limite é de 250 conversas iniciadas pela empresa a
+cada 24h — de sobra para os primeiros negócios em teste. Se algum dia
+isso não for suficiente, a verificação de negócio (Meta Business
+Manager → Configurações do Negócio → Segurança do Centro de Negócios)
+libera limites maiores (1.000, depois 10.000...).
+
+## 3. Aprovar os templates de mensagem
 
 Mensagens que a empresa inicia (confirmação, lembrete, cancelamento — ou
 seja, todo o fluxo do Slotta) **exigem um template pré-aprovado** pela Meta.
@@ -51,7 +87,7 @@ Se quiser mudar a ordem ou o texto, ajuste também
 `lib/whatsapp/providers/meta-cloud-provider.ts` (`TEMPLATE_PARAMETER_ORDER`)
 para bater com o que foi aprovado.
 
-## 3. Variáveis de ambiente
+## 4. Variáveis de ambiente
 
 No `.env` (local) ou nas Variables do Railway (produção):
 
@@ -71,7 +107,7 @@ WHATSAPP_TEMPLATE_WAITLIST=waitlist_available
 Sem `WHATSAPP_PROVIDER=meta`, o sistema continua no modo de log (nenhuma
 mensagem real é enviada) mesmo que as outras variáveis estejam preenchidas.
 
-## 4. Testar
+## 5. Testar
 
 1. Ative "Lembretes por WhatsApp" no painel da empresa (aba **Lembretes**).
 2. Ligue o **modo de teste** — libera um intervalo de poucos minutos.
@@ -79,7 +115,7 @@ mensagem real é enviada) mesmo que as outras variáveis estejam preenchidas.
 4. Clique em **Processar agora** (ou espere o worker automático, que roda a
    cada 60s por padrão) e confira o status do lembrete na lista.
 
-## 5. Trocar de provedor no futuro
+## 6. Trocar de provedor no futuro
 
 Toda a lógica do Slotta chama apenas `sendWhatsappMessage(...)` de
 `lib/whatsapp`. Para usar outro provedor (Twilio, Z-API, etc.), crie uma
@@ -87,7 +123,7 @@ nova classe em `lib/whatsapp/providers/` implementando a interface
 `WhatsappProvider` e registre-a em `lib/whatsapp/index.ts` — nenhum outro
 arquivo do projeto precisa mudar.
 
-## 4. Template opcional: pedido de avaliação
+## 7. Template opcional: pedido de avaliação
 
 O pedido de avaliação depois do atendimento (aba **Lembretes** do painel) sempre
 funciona por e-mail quando o cliente informou um. Para também enviar por
@@ -104,7 +140,7 @@ cliente tenha aceitado receber esse tipo de contato. Enquanto ele não estiver
 aprovado, o envio por WhatsApp falha (registrado como falha no painel) e só o
 e-mail é enviado.
 
-## Template opcional: aviso da lista de espera
+## 8. Template opcional: aviso da lista de espera
 
 Quando um horário abre em um dia que estava lotado, o cliente que entrou na
 lista de espera é avisado por e-mail (se informou um) e, se você criar o
