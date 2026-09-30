@@ -53,7 +53,18 @@ export function OwnerNotificationsCard() {
 
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
-    setPushState(subscription && Notification.permission === 'granted' ? 'on' : 'off');
+    if (subscription && Notification.permission === 'granted') {
+      // O aparelho pode já ter uma inscrição de outra conta usada antes neste navegador
+      // (ex: empresa de teste diferente) — reclama a inscrição para o usuário atual a cada carregamento.
+      await fetch('/api/admin/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription.toJSON()),
+      }).catch(() => {});
+      setPushState('on');
+    } else {
+      setPushState('off');
+    }
   }, []);
 
   useEffect(() => {
