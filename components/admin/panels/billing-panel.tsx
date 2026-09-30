@@ -9,6 +9,7 @@ type Status = {
   hasAccess: boolean;
   trialDaysLeft: number | null;
   currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
   hasStripeCustomer: boolean;
 };
 
@@ -91,7 +92,13 @@ export function BillingPanel() {
           ) : null}
 
           {status.currentPeriodEnd && (status.status === 'active' || status.status === 'past_due') ? (
-            <p className="mt-2 text-sm text-slate-300">Próxima cobrança: {formatDate(status.currentPeriodEnd)}</p>
+            status.cancelAtPeriodEnd ? (
+              <p className="mt-2 text-sm text-amber-200">
+                Cancelada — você continua com acesso até {formatDate(status.currentPeriodEnd)}, sem nova cobrança depois disso.
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-slate-300">Próxima cobrança: {formatDate(status.currentPeriodEnd)}</p>
+            )
           ) : null}
 
           {status.status === 'past_due' ? (

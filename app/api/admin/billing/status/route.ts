@@ -16,6 +16,7 @@ export async function GET() {
     hasAccess: hasBillingAccess(company),
     trialDaysLeft: trialDaysLeft(company),
     currentPeriodEnd: company.currentPeriodEnd,
+    cancelAtPeriodEnd: company.cancelAtPeriodEnd,
     hasStripeCustomer: Boolean(company.stripeCustomerId),
   });
 }

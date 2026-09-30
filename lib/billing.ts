@@ -96,6 +96,7 @@ async function syncSubscription(subscription: Stripe.Subscription, companyIdHint
         stripeSubscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
         currentPeriodEnd,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
       },
     });
     return;
@@ -104,7 +105,7 @@ async function syncSubscription(subscription: Stripe.Subscription, companyIdHint
   // Sem companyId (ex: evento chegou antes do checkout.session.completed): localiza pela assinatura já salva.
   await prisma.company.updateMany({
     where: { stripeSubscriptionId: subscription.id },
-    data: { subscriptionStatus: subscription.status, currentPeriodEnd },
+    data: { subscriptionStatus: subscription.status, currentPeriodEnd, cancelAtPeriodEnd: subscription.cancel_at_period_end },
   });
 }
 
