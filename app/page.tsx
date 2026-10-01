@@ -114,7 +114,6 @@ export default function HomePage() {
         <section className="card mt-12 p-8 text-center">
           <h2 className="text-2xl font-bold md:text-3xl">Comece a receber agendamentos hoje</h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-300">Cadastre sua empresa, configure seus serviços e horários e compartilhe o link com seus clientes.</p>
-          <p className="mx-auto mt-2 max-w-xl text-sm font-semibold text-emerald-300">14 dias grátis para testar, sem precisar de cartão de crédito.</p>
           <div className="mt-6 flex justify-center">
             <Link href="/cadastro" className="btn-primary">Cadastrar minha empresa</Link>
           </div>
