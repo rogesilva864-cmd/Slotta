@@ -21,14 +21,14 @@ export async function getOrCreateReminderSetting(companyId: string) {
   return prisma.reminderSetting.create({
     data: {
       companyId,
-      enabled: false,
+      enabled: true,
       testMode: false,
       intervals: {
         create: REMINDER_INTERVAL_PRESETS.filter((preset) => !preset.testOnly).map((preset) => ({
           key: preset.key,
           label: preset.label,
           minutesBefore: preset.minutesBefore,
-          active: false,
+          active: true,
         })),
       },
     },

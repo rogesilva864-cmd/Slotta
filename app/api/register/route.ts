@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { registerSchema } from '@/lib/validators';
 import { signToken } from '@/lib/auth';
 import { trialEndsAtFromNow } from '@/lib/billing';
+import { getOrCreateReminderSetting } from '@/lib/reminders/service';
 
 export async function POST(request: Request) {
   try {
@@ -75,6 +76,9 @@ export async function POST(request: Request) {
         active: true,
       })),
     });
+
+    // Lembretes por WhatsApp já nascem ligados, para o dono não perder nenhum aviso desde o primeiro agendamento.
+    await getOrCreateReminderSetting(company.id);
 
     const token = signToken({
       userId: user.id,
