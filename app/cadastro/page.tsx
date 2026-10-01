@@ -108,6 +108,7 @@ export default function CompanyRegisterPage() {
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">Cadastro</p>
               <h1 className="mt-2 text-3xl font-bold">Cadastre sua empresa</h1>
+              <p className="mt-2 text-sm font-semibold text-emerald-300">14 dias grátis para testar, sem precisar de cartão de crédito.</p>
             </div>
             <Link href="/" className="btn-secondary">Voltar ao início</Link>
           </div>
