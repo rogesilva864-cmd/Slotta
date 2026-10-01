@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { NotificationItem } from '../types';
 import { formatCurrency, formatDate, statusClass, statusLabel } from '../types';
 import { QuickBlockCard } from '../quick-block-card';
+import { OnboardingChecklist, type OnboardingStatus } from '../onboarding-checklist';
 
 type RecentAppointment = {
   id: string;
@@ -21,11 +22,23 @@ type DashboardData = {
   confirmed: number;
   billingThisMonth: number;
   recentAppointments: RecentAppointment[];
+  onboarding: OnboardingStatus | null;
 };
 
-const EMPTY_DASHBOARD: DashboardData = { totalAppointments: 0, pending: 0, confirmed: 0, billingThisMonth: 0, recentAppointments: [] };
+const EMPTY_DASHBOARD: DashboardData = {
+  totalAppointments: 0,
+  pending: 0,
+  confirmed: 0,
+  billingThisMonth: 0,
+  recentAppointments: [],
+  onboarding: null,
+};
 
-export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments' | 'calendar' | 'availability') => void }) {
+export function DashboardPanel({
+  onNavigate,
+}: {
+  onNavigate: (tab: 'appointments' | 'calendar' | 'availability' | 'reminders') => void;
+}) {
   const [dashboard, setDashboard] = useState<DashboardData>(EMPTY_DASHBOARD);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +64,7 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
         confirmed: dashboardData.confirmed ?? 0,
         billingThisMonth: dashboardData.billingThisMonth ?? 0,
         recentAppointments: Array.isArray(dashboardData.recentAppointments) ? dashboardData.recentAppointments : [],
+        onboarding: dashboardData.onboarding ?? null,
       });
       setNotifications(Array.isArray(notificationsData.notifications) ? notificationsData.notifications : []);
       setLoading(false);
@@ -73,6 +87,8 @@ export function DashboardPanel({ onNavigate }: { onNavigate: (tab: 'appointments
 
   return (
     <div className="space-y-6">
+      {dashboard.onboarding ? <OnboardingChecklist onboarding={dashboard.onboarding} onNavigate={onNavigate} /> : null}
+
       <QuickBlockCard onOpenAvailability={() => onNavigate('availability')} onChanged={() => setRefreshKey((key) => key + 1)} />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
