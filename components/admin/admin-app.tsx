@@ -16,8 +16,9 @@ import {
   ExternalLink,
   CreditCard,
   Hourglass,
+  LifeBuoy,
 } from 'lucide-react';
-import type { AdminCompany, AdminUser } from './types';
+import { whatsappLink, type AdminCompany, type AdminUser } from './types';
 import { DashboardPanel } from './panels/dashboard-panel';
 import { AppointmentsPanel } from './panels/appointments-panel';
 import { CalendarPanel } from './panels/calendar-panel';
@@ -211,6 +212,16 @@ function SidebarContent({
         >
           <ExternalLink size={18} /> Página pública
         </a>
+        {process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ? (
+          <a
+            href={whatsappLink(process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP, `Olá! Preciso de ajuda com o Slotta (empresa: ${company.name}).`)}
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+          >
+            <LifeBuoy size={18} /> Suporte
+          </a>
+        ) : null}
         <button
           type="button"
           onClick={onLogout}
