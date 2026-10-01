@@ -114,9 +114,6 @@ export default function HomePage() {
         <section className="card mt-12 p-8 text-center">
           <h2 className="text-2xl font-bold md:text-3xl">Comece a receber agendamentos hoje</h2>
           <p className="mx-auto mt-3 max-w-xl text-slate-300">Cadastre sua empresa, configure seus serviços e horários e compartilhe o link com seus clientes.</p>
-          <div className="mt-6 flex justify-center">
-            <Link href="/cadastro" className="btn-primary">Cadastrar minha empresa</Link>
-          </div>
         </section>
 
         <footer className="mt-10 text-center text-sm text-slate-500">© {new Date().getFullYear()} Slotta</footer>
