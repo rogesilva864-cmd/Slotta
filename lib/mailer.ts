@@ -176,6 +176,43 @@ export async function sendTrialExpiredEmail(
   });
 }
 
+export async function sendPlatformNewCompanyEmail(to: string, data: { name: string; email: string; publicUrl: string }) {
+  return sendEmail({
+    to,
+    subject: `Novo cadastro no Slotta: ${data.name}`,
+    text: `${data.name} (${data.email}) acabou de cadastrar uma empresa no Slotta e começou o teste grátis de 14 dias.\n\nPágina pública: ${data.publicUrl}`,
+    html: layout(
+      'Novo cadastro no Slotta',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;"><strong style="color:#edf4ff;">${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)}) acabou de cadastrar uma empresa e começou o teste grátis de 14 dias.</p>`,
+      { url: data.publicUrl, label: 'Ver página pública' }
+    ),
+  });
+}
+
+export async function sendPlatformNewSubscriberEmail(to: string, data: { name: string; email: string }) {
+  return sendEmail({
+    to,
+    subject: `Nova assinatura paga: ${data.name}`,
+    text: `${data.name} (${data.email}) acabou de assinar o Plano Slotta — primeiro pagamento confirmado pelo Stripe.`,
+    html: layout(
+      'Nova assinatura paga! 🎉',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;"><strong style="color:#edf4ff;">${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)}) acabou de assinar o Plano Slotta — primeiro pagamento confirmado pelo Stripe.</p>`
+    ),
+  });
+}
+
+export async function sendPlatformSubscriptionCanceledEmail(to: string, data: { name: string; email: string; accessUntilLabel: string }) {
+  return sendEmail({
+    to,
+    subject: `Cancelamento de assinatura: ${data.name}`,
+    text: `${data.name} (${data.email}) pediu o cancelamento da assinatura. O acesso continua até ${data.accessUntilLabel}, sem nova cobrança depois disso.`,
+    html: layout(
+      'Uma assinatura foi cancelada',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;"><strong style="color:#edf4ff;">${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)}) pediu o cancelamento da assinatura.</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0;">O acesso continua até <strong style="color:#edf4ff;">${escapeHtml(data.accessUntilLabel)}</strong>, sem nova cobrança depois disso.</p>`
+    ),
+  });
+}
+
 export async function sendAppointmentCancelledEmail(
   to: string,
   data: { customerName: string; companyName: string; serviceName: string; date: string; startTime: string; reason: string; bookingUrl: string }

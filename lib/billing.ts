@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
+import { notifyPlatformNewSubscriber, notifyPlatformSubscriptionCanceled } from '@/lib/platform-notify';
 
 export const TRIAL_DAYS = 14;
 export const PLAN_LABEL = 'Plano Slotta — R$ 59,90/mês';
@@ -87,26 +88,33 @@ async function syncSubscription(subscription: Stripe.Subscription, companyIdHint
   // Desde a versão mais recente da API do Stripe, current_period_end fica no item da assinatura, não mais na assinatura em si.
   const periodEndSeconds = subscription.items.data[0]?.current_period_end;
   const currentPeriodEnd = periodEndSeconds ? new Date(periodEndSeconds * 1000) : null;
+  const data = {
+    stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
+    stripeSubscriptionId: subscription.id,
+    subscriptionStatus: subscription.status,
+    currentPeriodEnd,
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+  };
+
+  // Carrega o estado anterior antes de sobrescrever, só para detectar a transição de cancelamento (abaixo).
+  const previous = companyId
+    ? await prisma.company.findUnique({ where: { id: companyId }, select: { name: true, email: true, cancelAtPeriodEnd: true } })
+    : await prisma.company.findFirst({ where: { stripeSubscriptionId: subscription.id }, select: { name: true, email: true, cancelAtPeriodEnd: true } });
 
   if (companyId) {
-    await prisma.company.update({
-      where: { id: companyId },
-      data: {
-        stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
-        stripeSubscriptionId: subscription.id,
-        subscriptionStatus: subscription.status,
-        currentPeriodEnd,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      },
-    });
-    return;
+    await prisma.company.update({ where: { id: companyId }, data });
+  } else {
+    // Sem companyId (ex: evento chegou antes do checkout.session.completed): localiza pela assinatura já salva.
+    await prisma.company.updateMany({ where: { stripeSubscriptionId: subscription.id }, data });
   }
 
-  // Sem companyId (ex: evento chegou antes do checkout.session.completed): localiza pela assinatura já salva.
-  await prisma.company.updateMany({
-    where: { stripeSubscriptionId: subscription.id },
-    data: { subscriptionStatus: subscription.status, currentPeriodEnd, cancelAtPeriodEnd: subscription.cancel_at_period_end },
-  });
+  // Avisa só na transição (false -> true), não a cada evento que o Stripe reenviar depois do cancelamento.
+  if (previous && !previous.cancelAtPeriodEnd && subscription.cancel_at_period_end && currentPeriodEnd) {
+    const accessUntilLabel = currentPeriodEnd.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    void notifyPlatformSubscriptionCanceled({ name: previous.name, email: previous.email }, accessUntilLabel).catch((error) => {
+      console.error('[billing] Falha ao avisar cancelamento ao dono da plataforma:', error);
+    });
+  }
 }
 
 /** Aplica um evento de webhook do Stripe ao banco. Ignora eventos que não usamos. */
@@ -121,6 +129,13 @@ export async function applyStripeEvent(event: Stripe.Event) {
       if (!companyId || typeof session.subscription !== 'string') break;
       const subscription = await stripe.subscriptions.retrieve(session.subscription);
       await syncSubscription(subscription, companyId);
+
+      const company = await prisma.company.findUnique({ where: { id: companyId }, select: { name: true, email: true } });
+      if (company) {
+        void notifyPlatformNewSubscriber(company).catch((error) => {
+          console.error('[billing] Falha ao avisar nova assinatura ao dono da plataforma:', error);
+        });
+      }
       break;
     }
     case 'customer.subscription.updated':

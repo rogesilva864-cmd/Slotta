@@ -5,6 +5,7 @@ import { registerSchema } from '@/lib/validators';
 import { signToken } from '@/lib/auth';
 import { trialEndsAtFromNow } from '@/lib/billing';
 import { getOrCreateReminderSetting } from '@/lib/reminders/service';
+import { notifyPlatformNewCompany } from '@/lib/platform-notify';
 
 export async function POST(request: Request) {
   try {
@@ -79,6 +80,10 @@ export async function POST(request: Request) {
 
     // Lembretes por WhatsApp já nascem ligados, para o dono não perder nenhum aviso desde o primeiro agendamento.
     await getOrCreateReminderSetting(company.id);
+
+    void notifyPlatformNewCompany({ name: company.name, email: company.email, slug: company.slug }).catch((error) => {
+      console.error('[register] Falha ao avisar novo cadastro:', error);
+    });
 
     const token = signToken({
       userId: user.id,
