@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { notifyPlatformNewSubscriber, notifyPlatformSubscriptionCanceled } from '@/lib/platform-notify';
 
 export const TRIAL_DAYS = 14;
-export const PLAN_LABEL = 'Plano Slotta — R$ 59,90/mês';
+export const PLAN_PRICE_LABEL = 'R$ 59,90';
+export const PLAN_LABEL = `Plano Slotta — ${PLAN_PRICE_LABEL}/mês`;
 
 /** Status que ainda dão acesso ao painel mesmo sem pagamento em dia agora mesmo (o Stripe tenta cobrar de novo automaticamente). */
 const GRACE_STATUSES = ['active', 'past_due'];

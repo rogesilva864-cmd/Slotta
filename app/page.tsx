@@ -1,5 +1,13 @@
 import Link from 'next/link';
 import { BellRing, CalendarCheck, CheckCircle2, Link2, Search, Store } from 'lucide-react';
+import { PLAN_PRICE_LABEL, TRIAL_DAYS } from '@/lib/billing';
+
+const planIncludes = [
+  'Página de agendamento própria para compartilhar com seus clientes',
+  'Confirmação, lembretes e avisos de cancelamento pelo WhatsApp',
+  'Painel para gerenciar agendamentos, serviços e horários',
+  'Lista de espera automática para dias cheios',
+];
 
 const steps = [
   { icon: Link2, title: 'Compartilhe seu link', text: 'Cada empresa ganha uma página própria de agendamento para divulgar onde quiser.' },
@@ -71,6 +79,35 @@ export default function HomePage() {
                 <p className="feature-text">{feature.text}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="text-center text-2xl font-bold md:text-3xl">Preço</h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-slate-300">Um plano único, com tudo incluso. Sem taxa de adesão, sem surpresa.</p>
+
+          <div className="card mx-auto mt-6 max-w-md p-8 text-center">
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">Plano Slotta</p>
+            <p className="mt-3 text-5xl font-extrabold">
+              {PLAN_PRICE_LABEL}
+              <span className="text-lg font-medium text-slate-400">/mês</span>
+            </p>
+            <p className="mt-2 text-sm font-semibold text-emerald-300">
+              {TRIAL_DAYS} dias grátis para testar, sem cartão de crédito
+            </p>
+
+            <ul className="mt-6 space-y-3 text-left text-sm text-slate-300">
+              {planIncludes.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-300" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-6 text-xs text-slate-400">Cancele quando quiser, direto pelo painel.</p>
+
+            <Link href="/cadastro" className="btn-primary mt-6 inline-block w-full">Cadastrar minha empresa</Link>
           </div>
         </section>
 
