@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarOff } from 'lucide-react';
+import { CalendarOff, ChevronDown } from 'lucide-react';
 import type { BlockedTimeItem } from './types';
 import { CANCEL_REASON_DEFAULT, ManualContactList, channelLabel, requestCancel, type ManualContact } from './cancel-helpers';
 
@@ -10,6 +10,7 @@ type Conflict = { id: string; date: string; customerName: string; customerPhone:
 type Slot = { date: string; startTime: string; endTime: string } | null;
 
 const WHOLE_DAY_END = '23:59';
+const EXPANDED_KEY = 'slotta:quick-block-expanded';
 
 function brazilNow() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -68,6 +69,27 @@ export function QuickBlockCard({ onOpenAvailability, onChanged }: { onOpenAvaila
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [manualContacts, setManualContacts] = useState<ManualContact[]>([]);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(EXPANDED_KEY) === '1') setExpanded(true);
+    } catch {
+      // armazenamento indisponível (aba privada etc.): fica fechado
+    }
+  }, []);
+
+  const toggleExpanded = () => {
+    const next = !expanded;
+    setExpanded(next);
+    // ao fechar, some o recado simples; avisos que pedem ação continuam visíveis
+    if (!next && conflicts.length === 0 && manualContacts.length === 0) setMessage(null);
+    try {
+      window.localStorage.setItem(EXPANDED_KEY, next ? '1' : '0');
+    } catch {
+      // ignora
+    }
+  };
 
   const load = useCallback(async () => {
     const response = await fetch('/api/admin/availability');
@@ -161,32 +183,50 @@ export function QuickBlockCard({ onOpenAvailability, onChanged }: { onOpenAvaila
   const today = brazilNow().date;
   const toneClass = message?.tone === 'error' ? 'text-rose-300' : message?.tone === 'warn' ? 'text-amber-200' : 'text-emerald-300';
 
+  const summary =
+    blocks.length === 0
+      ? 'Nenhum bloqueio ativo'
+      : `${blocks.length} ${blocks.length === 1 ? 'ativo' : 'ativos'} · ${describeBlock(blocks[0], today)}`;
+
   return (
-    <section className="card p-5">
-      <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300">
-          <CalendarOff size={20} aria-hidden />
+    <section className="card p-4 sm:p-5">
+      <button
+        type="button"
+        onClick={toggleExpanded}
+        aria-expanded={expanded}
+        aria-controls="quick-block-body"
+        className="flex w-full items-center gap-3 text-left"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300">
+          <CalendarOff size={18} aria-hidden />
         </span>
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold">Bloqueio rápido</h2>
-          <p className="mt-1 text-sm text-slate-300">Imprevisto, folga ou almoço? Toque para impedir novos agendamentos no período.</p>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {PRESETS.map((preset) => {
-          const slot = preset.build();
-          return (
-            <button key={preset.id} type="button" className="btn-secondary !px-3 !py-3 text-sm" disabled={busy || slot === null} onClick={() => block(slot)}>
-              {preset.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <button type="button" onClick={onOpenAvailability} className="mt-3 text-sm font-medium text-brand-100 hover:underline">
-        Bloqueio personalizado (escolher data e horário)
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Bloqueio rápido</span>
+          <span className="block truncate text-sm text-slate-400">
+            {expanded ? 'Impeça novos agendamentos no período.' : summary}
+          </span>
+        </span>
+        <ChevronDown size={20} aria-hidden className={`shrink-0 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
+
+      {expanded ? (
+        <div id="quick-block-body">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {PRESETS.map((preset) => {
+              const slot = preset.build();
+              return (
+                <button key={preset.id} type="button" className="btn-secondary !px-3 !py-3 text-sm" disabled={busy || slot === null} onClick={() => block(slot)}>
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <button type="button" onClick={onOpenAvailability} className="mt-3 text-sm font-medium text-brand-100 hover:underline">
+            Bloqueio personalizado (escolher data e horário)
+          </button>
+        </div>
+      ) : null}
 
       {message ? (
         <p className={`mt-3 text-sm ${toneClass}`} role="status">
@@ -228,7 +268,7 @@ export function QuickBlockCard({ onOpenAvailability, onChanged }: { onOpenAvaila
 
       <ManualContactList contacts={manualContacts} />
 
-      {blocks.length > 0 ? (
+      {expanded && blocks.length > 0 ? (
         <div className="mt-5 border-t border-white/10 pt-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Bloqueios ativos</p>
           <ul className="mt-3 space-y-2">
