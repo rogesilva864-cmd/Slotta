@@ -4,6 +4,24 @@ import { getSessionUser } from '@/lib/session';
 import { REMINDER_INTERVAL_PRESETS, getOrCreateReminderSetting, getPresetByKey } from '@/lib/reminders/service';
 import { REVIEW_DELAY_OPTIONS, getReviewStats, isValidReviewDelay, isValidReviewUrl } from '@/lib/reviews/service';
 
+/**
+ * Lista todos os intervalos oferecidos, mesmo os que a empresa ainda não tem
+ * no banco (ex.: o de teste, que não é criado junto com a empresa); o PATCH
+ * cria a linha quando o dono salva.
+ */
+function listIntervals(saved: { key: string; label: string; minutesBefore: number; active: boolean }[]) {
+  return REMINDER_INTERVAL_PRESETS.map((preset) => {
+    const row = saved.find((interval) => interval.key === preset.key);
+    return {
+      key: preset.key,
+      label: row?.label ?? preset.label,
+      minutesBefore: row?.minutesBefore ?? preset.minutesBefore,
+      active: row?.active ?? false,
+      testOnly: preset.testOnly,
+    };
+  });
+}
+
 export async function GET() {
   const sessionUser = await getSessionUser();
   if (!sessionUser) {
@@ -15,13 +33,7 @@ export async function GET() {
   return NextResponse.json({
     enabled: setting.enabled,
     testMode: setting.testMode,
-    intervals: setting.intervals.map((interval) => ({
-      key: interval.key,
-      label: interval.label,
-      minutesBefore: interval.minutesBefore,
-      active: interval.active,
-      testOnly: REMINDER_INTERVAL_PRESETS.find((preset) => preset.key === interval.key)?.testOnly ?? false,
-    })),
+    intervals: listIntervals(setting.intervals),
     availablePresets: REMINDER_INTERVAL_PRESETS,
     review: {
       enabled: setting.reviewEnabled,
@@ -108,13 +120,7 @@ export async function PATCH(request: Request) {
       message: 'Configurações de lembretes salvas.',
       enabled: updated!.enabled,
       testMode: updated!.testMode,
-      intervals: updated!.intervals.map((interval) => ({
-        key: interval.key,
-        label: interval.label,
-        minutesBefore: interval.minutesBefore,
-        active: interval.active,
-        testOnly: REMINDER_INTERVAL_PRESETS.find((preset) => preset.key === interval.key)?.testOnly ?? false,
-      })),
+      intervals: listIntervals(updated!.intervals),
     });
   } catch (error) {
     console.error('[admin/reminders/settings] erro:', error);
