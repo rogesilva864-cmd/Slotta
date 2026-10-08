@@ -38,27 +38,42 @@ export function RemindersPanel() {
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState('');
+  const [justSaved, setJustSaved] = useState(false);
 
-  const loadAll = async () => {
-    setLoading(true);
-    const [settingsResponse, statsResponse] = await Promise.all([
-      fetch('/api/admin/reminders/settings'),
-      fetch('/api/admin/reminders/stats'),
-    ]);
-    const settingsData = await settingsResponse.json();
+  const snapshotOf = (nextEnabled: boolean, nextTestMode: boolean, nextIntervals: IntervalItem[]) =>
+    JSON.stringify({ enabled: nextEnabled, testMode: nextTestMode, intervals: nextIntervals.map((item) => [item.key, item.active]) });
+
+  const applySettings = (data: { enabled?: unknown; testMode?: unknown; intervals?: unknown }) => {
+    const nextEnabled = Boolean(data.enabled);
+    const nextTestMode = Boolean(data.testMode);
+    const nextIntervals = Array.isArray(data.intervals) ? (data.intervals as IntervalItem[]) : [];
+    setEnabled(nextEnabled);
+    setTestMode(nextTestMode);
+    setIntervals(nextIntervals);
+    setSavedSnapshot(snapshotOf(nextEnabled, nextTestMode, nextIntervals));
+  };
+
+  const loadStats = async () => {
+    const statsResponse = await fetch('/api/admin/reminders/stats');
     const statsData = await statsResponse.json();
-
-    setEnabled(Boolean(settingsData.enabled));
-    setTestMode(Boolean(settingsData.testMode));
-    setIntervals(Array.isArray(settingsData.intervals) ? settingsData.intervals : []);
     setStats(statsData.stats ?? { pending: 0, sent: 0, failed: 0, cancelled: 0, total: 0 });
     setRecent(Array.isArray(statsData.recent) ? statsData.recent : []);
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadAll();
+    const load = async () => {
+      const settingsResponse = await fetch('/api/admin/reminders/settings');
+      applySettings(await settingsResponse.json());
+      await loadStats();
+      setLoading(false);
+    };
+    load();
   }, []);
+
+  // O botão de salvar só fica ativo quando há alguma mudança ainda não salva.
+  const isDirty = snapshotOf(enabled, testMode, intervals) !== savedSnapshot;
 
   const toggleInterval = (key: string) => {
     setIntervals((prev) => prev.map((interval) => (interval.key === key ? { ...interval, active: !interval.active } : interval)));
@@ -66,22 +81,32 @@ export function RemindersPanel() {
 
   const save = async () => {
     setSaving(true);
-    setMessage(null);
+    setSaveError(null);
+    setJustSaved(false);
 
-    const response = await fetch('/api/admin/reminders/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        enabled,
-        testMode,
-        intervals: intervals.map((interval) => ({ key: interval.key, active: interval.active })),
-      }),
-    });
-
-    const data = await response.json();
-    setMessage(response.ok ? 'Configurações salvas com sucesso.' : data.message || 'Não foi possível salvar.');
-    setSaving(false);
-    await loadAll();
+    try {
+      const response = await fetch('/api/admin/reminders/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled,
+          testMode,
+          intervals: intervals.map((interval) => ({ key: interval.key, active: interval.active })),
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        applySettings(data);
+        setJustSaved(true);
+        await loadStats();
+      } else {
+        setSaveError(data.message || 'Não foi possível salvar.');
+      }
+    } catch {
+      setSaveError('Não foi possível salvar. Verifique sua conexão.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const runNow = async () => {
@@ -91,7 +116,7 @@ export function RemindersPanel() {
     const data = await response.json();
     setMessage(data.message || 'Processamento concluído.');
     setRunning(false);
-    await loadAll();
+    await loadStats();
   };
 
   if (loading) {
@@ -176,10 +201,18 @@ export function RemindersPanel() {
 
           {message ? <p className="mt-4 text-sm text-cyan-200">{message}</p> : null}
 
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button type="button" onClick={save} disabled={saving} className="btn-primary disabled:cursor-not-allowed disabled:opacity-70">
+          {saveError ? <p className="mt-4 text-sm text-rose-300">{saveError}</p> : null}
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving || !isDirty}
+              className="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
+            >
               {saving ? 'Salvando...' : 'Salvar configurações'}
             </button>
+            {justSaved && !isDirty ? <span className="text-sm font-medium text-emerald-300">✓ Configurações salvas</span> : null}
             <button
               type="button"
               onClick={runNow}

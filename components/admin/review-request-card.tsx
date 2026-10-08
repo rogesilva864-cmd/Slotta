@@ -19,7 +19,14 @@ export function ReviewRequestCard() {
   const [delayOptions, setDelayOptions] = useState<number[]>([60, 120, 240, 1440]);
   const [stats, setStats] = useState<ReviewStats>({ sent: 0, failed: 0, skipped: 0 });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState('');
+  const [justSaved, setJustSaved] = useState(false);
+
+  const snapshotOf = (nextEnabled: boolean, nextUrl: string, nextDelay: number) =>
+    JSON.stringify([nextEnabled, nextUrl.trim(), nextDelay]);
+  // O botão de salvar só fica ativo quando há alguma mudança ainda não salva.
+  const isDirty = snapshotOf(enabled, url, delayMinutes) !== savedSnapshot;
 
   useEffect(() => {
     const load = async () => {
@@ -27,9 +34,13 @@ export function ReviewRequestCard() {
       if (!response.ok) return;
       const data = await response.json();
       if (!data.review) return;
-      setEnabled(Boolean(data.review.enabled));
-      setUrl(data.review.url ?? '');
-      setDelayMinutes(Number(data.review.delayMinutes) || 120);
+      const nextEnabled = Boolean(data.review.enabled);
+      const nextUrl = data.review.url ?? '';
+      const nextDelay = Number(data.review.delayMinutes) || 120;
+      setEnabled(nextEnabled);
+      setUrl(nextUrl);
+      setDelayMinutes(nextDelay);
+      setSavedSnapshot(snapshotOf(nextEnabled, nextUrl, nextDelay));
       if (Array.isArray(data.review.delayOptions)) setDelayOptions(data.review.delayOptions);
       if (data.review.stats) setStats(data.review.stats);
     };
@@ -38,7 +49,8 @@ export function ReviewRequestCard() {
 
   const save = async () => {
     setSaving(true);
-    setMessage(null);
+    setError(null);
+    setJustSaved(false);
     try {
       const response = await fetch('/api/admin/reminders/settings', {
         method: 'PATCH',
@@ -46,7 +58,14 @@ export function ReviewRequestCard() {
         body: JSON.stringify({ review: { enabled, url: url.trim(), delayMinutes } }),
       });
       const data = await response.json();
-      setMessage({ ok: response.ok, text: response.ok ? 'Configuração de avaliações salva.' : data.message || 'Não foi possível salvar.' });
+      if (response.ok) {
+        setSavedSnapshot(snapshotOf(enabled, url, delayMinutes));
+        setJustSaved(true);
+      } else {
+        setError(data.message || 'Não foi possível salvar.');
+      }
+    } catch {
+      setError('Não foi possível salvar. Verifique sua conexão.');
     } finally {
       setSaving(false);
     }
@@ -113,12 +132,20 @@ export function ReviewRequestCard() {
           {stats.failed > 0 ? <span className="text-rose-300"> · {stats.failed} com falha</span> : null}
           {stats.skipped > 0 ? <span> · {stats.skipped} sem canal (cliente sem e-mail)</span> : null}
         </p>
-        <button type="button" className="btn-primary" onClick={save} disabled={saving}>
-          {saving ? 'Salvando...' : 'Salvar'}
-        </button>
+        <div className="flex items-center gap-3">
+          {justSaved && !isDirty ? <span className="text-sm font-medium text-emerald-300">✓ Configurações salvas</span> : null}
+          <button
+            type="button"
+            className="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={save}
+            disabled={saving || !isDirty}
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
       </div>
 
-      {message ? <p className={`mt-3 text-sm ${message.ok ? 'text-emerald-300' : 'text-rose-300'}`}>{message.text}</p> : null}
+      {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
     </section>
   );
 }
