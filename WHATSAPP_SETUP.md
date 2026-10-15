@@ -69,14 +69,14 @@ variáveis numeradas `{{1}}`, `{{2}}`, ... **exatamente nessa ordem**:
 | Template | Variáveis, em ordem |
 |---|---|
 | `appointment_confirmed` | nome do cliente, nome da empresa, nome do serviço, data, horário |
-| `appointment_reminder` | nome do cliente, nome da empresa, nome do serviço, data, horário, "faltam X" |
+| `appointment_reminder` | nome do cliente, nome da empresa, nome do serviço, data, horário |
 | `appointment_cancelled` | nome do cliente, nome da empresa, nome do serviço, data, horário, motivo |
 | `review_request` (opcional, só se usar o pedido de avaliação) | nome do cliente, nome da empresa, link de avaliação |
 | `waitlist_available` (opcional, só se usar a lista de espera) | nome do cliente, nome da empresa, nome do serviço, data (dd/mm/aaaa), link para agendar |
 
 Exemplo de corpo para `appointment_reminder`:
 
-> Olá {{1}}! Passando para lembrar do seu horário na {{2}}. Serviço: {{3}}, dia {{4}} às {{5}}. {{6}}.
+> Olá {{1}}! Passando para lembrar do seu horário na {{2}}. Serviço: {{3}}, dia {{4}} às {{5}}. Até lá!
 
 Depois de aprovados (normalmente em minutos a poucas horas), os nomes dos
 templates vão nas variáveis `WHATSAPP_TEMPLATE_CONFIRMED`,

@@ -5,7 +5,7 @@ import type { WhatsappProvider, WhatsappSendRequest, WhatsappSendResult, Whatsap
 // {{1}}, {{2}}, ... exatamente nessa ordem. Ver WHATSAPP_SETUP.md.
 const TEMPLATE_PARAMETER_ORDER: Record<WhatsappTemplateType, string[]> = {
   APPOINTMENT_CONFIRMED: ['customerName', 'companyName', 'serviceName', 'date', 'startTime'],
-  APPOINTMENT_REMINDER: ['customerName', 'companyName', 'serviceName', 'date', 'startTime', 'intervalLabel'],
+  APPOINTMENT_REMINDER: ['customerName', 'companyName', 'serviceName', 'date', 'startTime'],
   APPOINTMENT_CANCELLED: ['customerName', 'companyName', 'serviceName', 'date', 'startTime', 'reason'],
   REVIEW_REQUEST: ['customerName', 'companyName', 'reviewUrl'],
   WAITLIST_AVAILABLE: ['customerName', 'companyName', 'serviceName', 'date', 'bookingUrl'],
