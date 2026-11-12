@@ -116,7 +116,10 @@ export default function HomePage() {
           <p className="mx-auto mt-3 max-w-xl text-slate-300">Cadastre sua empresa, configure seus serviços e horários e compartilhe o link com seus clientes.</p>
         </section>
 
-        <footer className="mt-10 text-center text-sm text-slate-500">© {new Date().getFullYear()} Slotta</footer>
+        <footer className="mt-10 text-center text-sm text-slate-500">
+          <p>© {new Date().getFullYear()} Slotta</p>
+          <p className="mt-1 text-xs">Slotta é um produto de 66.202.438 ROGERIO SILVA CRUZ · CNPJ 66.202.438/0001-60 · Ubá/MG</p>
+        </footer>
       </div>
     </main>
   );
