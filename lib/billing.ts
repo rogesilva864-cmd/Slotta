@@ -27,12 +27,29 @@ export function trialEndsAtFromNow() {
 }
 
 export type SubscriptionCompany = {
+  slug?: string;
   subscriptionStatus: string;
   trialEndsAt: Date | null;
 };
 
+/**
+ * Empresas que nunca pagam (a do dono da plataforma). Fica fora do banco de
+ * propósito: eventos do Stripe (ex.: fim de uma assinatura de teste) mudam o
+ * status no banco e não podem bloquear o acesso dessas empresas.
+ * Lista separada por vírgula em BILLING_EXEMPT_COMPANY_SLUGS; padrão "velyxon".
+ */
+export function isBillingExempt(company: SubscriptionCompany) {
+  if (!company.slug) return false;
+  const slugs = (process.env.BILLING_EXEMPT_COMPANY_SLUGS ?? 'velyxon')
+    .split(',')
+    .map((slug) => slug.trim())
+    .filter(Boolean);
+  return slugs.includes(company.slug);
+}
+
 /** Empresas cadastradas antes do sistema de cobrança existir (trial sem prazo) nunca são bloqueadas por aqui. */
 export function hasBillingAccess(company: SubscriptionCompany) {
+  if (isBillingExempt(company)) return true;
   if (GRACE_STATUSES.includes(company.subscriptionStatus)) return true;
   if (company.subscriptionStatus === 'trial') {
     if (!company.trialEndsAt) return true;

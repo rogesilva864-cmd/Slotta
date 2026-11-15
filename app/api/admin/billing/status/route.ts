@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/session';
-import { PLAN_LABEL, hasBillingAccess, trialDaysLeft } from '@/lib/billing';
+import { PLAN_LABEL, hasBillingAccess, isBillingExempt, trialDaysLeft } from '@/lib/billing';
 
 export async function GET() {
   const sessionUser = await getSessionUser();
@@ -9,6 +9,18 @@ export async function GET() {
   }
 
   const company = sessionUser.company;
+
+  if (isBillingExempt(company)) {
+    return NextResponse.json({
+      planLabel: PLAN_LABEL,
+      status: 'exempt',
+      hasAccess: true,
+      trialDaysLeft: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+      hasStripeCustomer: false,
+    });
+  }
 
   return NextResponse.json({
     planLabel: PLAN_LABEL,

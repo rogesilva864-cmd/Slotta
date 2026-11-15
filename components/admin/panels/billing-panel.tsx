@@ -14,6 +14,7 @@ type Status = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
+  exempt: 'Gratuito (administrador da plataforma)',
   trial: 'Em teste grátis',
   active: 'Ativa',
   past_due: 'Pagamento pendente',
@@ -107,7 +108,7 @@ export function BillingPanel() {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
-          {status.hasStripeCustomer ? (
+          {status.status === 'exempt' ? null : status.hasStripeCustomer ? (
             <button type="button" onClick={() => goTo('/api/admin/billing/portal')} disabled={busy} className="btn-primary disabled:cursor-not-allowed disabled:opacity-70">
               {busy ? 'Abrindo...' : 'Gerenciar assinatura'}
             </button>
