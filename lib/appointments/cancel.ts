@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { sendAppointmentCancelledEmail } from '@/lib/mailer';
 import { cancelPendingRemindersForAppointment, getAppointmentDateTime, sendAppointmentCancelledMessage } from '@/lib/reminders/service';
 
@@ -50,7 +51,7 @@ export async function cancelAppointmentAndNotify(params: { appointmentId: string
     data: {
       companyId: appointment.companyId,
       title: 'Agendamento cancelado',
-      message: `${appointment.customer.name} teve o horário de ${appointment.date} às ${appointment.startTime} cancelado: ${reason}`,
+      message: `${bookingName(appointment)} teve o horário de ${appointment.date} às ${appointment.startTime} cancelado: ${reason}`,
       appointmentId: appointment.id,
     },
   });
@@ -66,7 +67,7 @@ export async function cancelAppointmentAndNotify(params: { appointmentId: string
   if (appointment.customer.email) {
     try {
       const email = await sendAppointmentCancelledEmail(appointment.customer.email, {
-        customerName: appointment.customer.name,
+        customerName: bookingName(appointment),
         companyName: appointment.company.name,
         serviceName: appointment.service.name,
         date: appointment.date,
@@ -82,7 +83,7 @@ export async function cancelAppointmentAndNotify(params: { appointmentId: string
 
   return {
     ok: true,
-    customerName: appointment.customer.name,
+    customerName: bookingName(appointment),
     customerPhone: appointment.customer.phone,
     notifiedBy,
     needsManualContact: notifiedBy.length === 0,

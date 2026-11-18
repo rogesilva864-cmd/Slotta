@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { sendPushToUser } from '@/lib/push';
 import {
   sendAppointmentCancelledByClientEmail,
@@ -45,8 +46,8 @@ export async function notifyOwnersNewAppointment(appointmentId: string) {
   const panelUrl = `${appUrl()}/admin`;
   const autoConfirmed = appointment.status === 'CONFIRMED';
   const summary = autoConfirmed
-    ? `${appointment.customer.name} agendou ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`
-    : `${appointment.customer.name} pediu ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`;
+    ? `${bookingName(appointment)} agendou ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`
+    : `${bookingName(appointment)} pediu ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`;
 
   await Promise.all(
     appointment.company.users.map(async (user) => {
@@ -60,7 +61,7 @@ export async function notifyOwnersNewAppointment(appointmentId: string) {
 
         if (delivered === 0 && user.notifyEmailFallback) {
           await sendNewAppointmentEmail(user.email, {
-            customerName: appointment.customer.name,
+            customerName: bookingName(appointment),
             serviceName: appointment.service.name,
             date: appointment.date,
             startTime: appointment.startTime,
@@ -84,7 +85,7 @@ export async function notifyOwnersAppointmentCancelledByClient(appointmentId: st
   if (!appointment) return;
 
   const panelUrl = `${appUrl()}/admin`;
-  const summary = `${appointment.customer.name} cancelou ${appointment.service.name} de ${appointment.date} às ${appointment.startTime}.`;
+  const summary = `${bookingName(appointment)} cancelou ${appointment.service.name} de ${appointment.date} às ${appointment.startTime}.`;
 
   await Promise.all(
     appointment.company.users.map(async (user) => {
@@ -98,7 +99,7 @@ export async function notifyOwnersAppointmentCancelledByClient(appointmentId: st
 
         if (delivered === 0 && user.notifyEmailFallback) {
           await sendAppointmentCancelledByClientEmail(user.email, {
-            customerName: appointment.customer.name,
+            customerName: bookingName(appointment),
             serviceName: appointment.service.name,
             date: appointment.date,
             startTime: appointment.startTime,
@@ -124,7 +125,7 @@ export async function notifyOwnersAppointmentRescheduled(
   if (!appointment) return;
 
   const panelUrl = `${appUrl()}/admin`;
-  const summary = `${appointment.customer.name} remarcou ${appointment.service.name}: ${previous.date} ${previous.startTime} → ${appointment.date} ${appointment.startTime}.`;
+  const summary = `${bookingName(appointment)} remarcou ${appointment.service.name}: ${previous.date} ${previous.startTime} → ${appointment.date} ${appointment.startTime}.`;
 
   await Promise.all(
     appointment.company.users.map(async (user) => {
@@ -138,7 +139,7 @@ export async function notifyOwnersAppointmentRescheduled(
 
         if (delivered === 0 && user.notifyEmailFallback) {
           await sendAppointmentRescheduledEmail(user.email, {
-            customerName: appointment.customer.name,
+            customerName: bookingName(appointment),
             serviceName: appointment.service.name,
             previousDate: previous.date,
             previousStartTime: previous.startTime,
@@ -186,7 +187,7 @@ export async function processDailyDigests() {
 
       const items = appointments.map((appointment) => ({
         time: appointment.startTime,
-        customerName: appointment.customer.name,
+        customerName: bookingName(appointment),
         serviceName: appointment.service.name,
         status: STATUS_LABEL[appointment.status] ?? appointment.status.toLowerCase(),
       }));

@@ -7,6 +7,7 @@ import { notifyOwnersNewAppointment } from '@/lib/owner-notifications';
 import { clearWaitlistForBooking } from '@/lib/waitlist/service';
 import { getClientIp, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
 import { runAfterConfirmation } from '@/lib/appointments/confirm';
+import { withBookingName } from '@/lib/appointments/customer-name';
 
 const IP_LIMIT = { limit: 15, windowMs: 60 * 60 * 1000 };
 const PHONE_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 };
@@ -87,6 +88,7 @@ export async function POST(request: Request) {
         companyId,
         serviceId,
         customerId: customer.id,
+        customerName,
         date,
         startTime,
         endTime: calculateEndTime(startTime, service.durationMinutes),
@@ -157,6 +159,6 @@ export async function GET(request: Request) {
     take: 5,
   });
 
-  return NextResponse.json({ appointments });
+  return NextResponse.json({ appointments: appointments.map(withBookingName) });
 }
 

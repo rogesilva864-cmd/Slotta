@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { cancelPendingRemindersForAppointment } from '@/lib/reminders/service';
 import { canCancelAppointment } from '@/lib/appointments/cancel';
@@ -53,7 +54,7 @@ export async function selfCancelAppointment(params: { appointmentId: string; con
     data: {
       companyId: appointment.companyId,
       title: 'Cliente cancelou o agendamento',
-      message: `${appointment.customer.name} cancelou o horário de ${appointment.date} às ${appointment.startTime}.`,
+      message: `${bookingName(appointment)} cancelou o horário de ${appointment.date} às ${appointment.startTime}.`,
       appointmentId: appointment.id,
     },
   });
@@ -116,7 +117,7 @@ export async function selfRescheduleAppointment(params: {
     data: {
       companyId: appointment.companyId,
       title: 'Cliente remarcou o agendamento',
-      message: `${appointment.customer.name} remarcou de ${previous.date} às ${previous.startTime} para ${params.date} às ${params.startTime}.`,
+      message: `${bookingName(appointment)} remarcou de ${previous.date} às ${previous.startTime} para ${params.date} às ${params.startTime}.`,
       appointmentId: appointment.id,
     },
   });

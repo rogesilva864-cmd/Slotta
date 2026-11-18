@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
 import { runAfterConfirmation } from '@/lib/appointments/confirm';
@@ -36,7 +37,7 @@ async function updateStatus(appointmentId: string) {
       data: {
         companyId: appointment.companyId,
         title: 'Agendamento confirmado',
-        message: `${appointment.customer.name} teve o status atualizado para CONFIRMED.`,
+        message: `${bookingName(appointment)} teve o status atualizado para CONFIRMED.`,
         appointmentId: appointment.id,
       },
     });

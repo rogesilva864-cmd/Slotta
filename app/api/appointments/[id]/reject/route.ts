@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
 import { cancelPendingRemindersForAppointment, sendAppointmentCancelledMessage } from '@/lib/reminders/service';
@@ -42,7 +43,7 @@ async function rejectAppointment(appointmentId: string, request: Request) {
       data: {
         companyId: appointment.companyId,
         title: 'Agendamento rejeitado',
-        message: `${appointment.customer.name} foi rejeitado(a): ${rejectionReason}`,
+        message: `${bookingName(appointment)} foi rejeitado(a): ${rejectionReason}`,
         appointmentId: appointment.id,
       },
     });

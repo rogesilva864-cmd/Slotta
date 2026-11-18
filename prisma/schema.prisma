@@ -127,6 +127,11 @@ model Appointment {
   companyId        String
   serviceId        String
   customerId       String
+  // Nome digitado NESTE agendamento. O Customer é um por telefone e tem o nome
+  // trocado a cada novo agendamento; sem isto, agendar para outra pessoa pelo
+  // mesmo celular renomeava todos os agendamentos antigos. Null nos antigos
+  // (cai no customer.name) — ver lib/appointments/customer-name.ts.
+  customerName     String?
   date             String
   startTime       String
   endTime         String

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
+import { bookingName, withBookingName } from '@/lib/appointments/customer-name';
 
 export async function GET(request: Request) {
   const sessionUser = await getSessionUser();
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
   const filtered = search
     ? appointments.filter((appointment) => {
         return (
+          bookingName(appointment).toLowerCase().includes(search) ||
           appointment.customer.name.toLowerCase().includes(search) ||
           appointment.customer.phone.toLowerCase().includes(search) ||
           (appointment.customer.email ?? '').toLowerCase().includes(search) ||
@@ -33,5 +35,5 @@ export async function GET(request: Request) {
       })
     : appointments;
 
-  return NextResponse.json({ appointments: filtered });
+  return NextResponse.json({ appointments: filtered.map(withBookingName) });
 }

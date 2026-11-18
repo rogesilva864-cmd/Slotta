@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
 import { getReminderStats } from '@/lib/reminders/service';
@@ -27,7 +28,7 @@ export async function GET() {
       scheduledFor: reminder.scheduledFor,
       sentAt: reminder.sentAt,
       error: reminder.error,
-      customerName: reminder.appointment.customer.name,
+      customerName: bookingName(reminder.appointment),
       serviceName: reminder.appointment.service.name,
       appointmentDate: reminder.appointment.date,
       appointmentTime: reminder.appointment.startTime,

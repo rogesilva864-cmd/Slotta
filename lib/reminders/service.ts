@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { sendWhatsappMessage } from '@/lib/whatsapp';
 import { REMINDER_INTERVAL_PRESETS, getPresetByKey } from './presets';
 
@@ -173,7 +174,7 @@ export async function processDueReminders(options?: { companyId?: string; limit?
       to: appointment.customer.phone,
       templateType: 'APPOINTMENT_REMINDER',
       variables: {
-        customerName: appointment.customer.name,
+        customerName: bookingName(appointment),
         companyName: appointment.company.name,
         serviceName: appointment.service.name,
         date: appointment.date,
@@ -216,7 +217,7 @@ export async function sendAppointmentConfirmedMessage(appointmentId: string) {
       to: appointment.customer.phone,
       templateType: 'APPOINTMENT_CONFIRMED',
       variables: {
-        customerName: appointment.customer.name,
+        customerName: bookingName(appointment),
         companyName: appointment.company.name,
         serviceName: appointment.service.name,
         date: appointment.date,
@@ -247,7 +248,7 @@ export async function sendAppointmentCancelledMessage(appointmentId: string, rea
       to: appointment.customer.phone,
       templateType: 'APPOINTMENT_CANCELLED',
       variables: {
-        customerName: appointment.customer.name,
+        customerName: bookingName(appointment),
         companyName: appointment.company.name,
         serviceName: appointment.service.name,
         date: appointment.date,

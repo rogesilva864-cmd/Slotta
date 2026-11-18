@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { sendWhatsappMessage } from '@/lib/whatsapp';
 import { sendReviewRequestEmail } from '@/lib/mailer';
 
@@ -87,7 +88,7 @@ export async function processReviewRequests(now = new Date()) {
           to: appointment.customer.phone,
           templateType: 'REVIEW_REQUEST',
           variables: {
-            customerName: appointment.customer.name,
+            customerName: bookingName(appointment),
             companyName: appointment.company.name,
             reviewUrl: setting.reviewUrl,
           },
@@ -99,7 +100,7 @@ export async function processReviewRequests(now = new Date()) {
       if (appointment.customer.email) {
         try {
           const email = await sendReviewRequestEmail(appointment.customer.email, {
-            customerName: appointment.customer.name,
+            customerName: bookingName(appointment),
             companyName: appointment.company.name,
             reviewUrl: setting.reviewUrl,
           });

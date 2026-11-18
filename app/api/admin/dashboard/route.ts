@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
+import { withBookingName } from '@/lib/appointments/customer-name';
 
 const REVENUE_STATUSES = ['CONFIRMED', 'COMPLETED'];
 
@@ -53,7 +54,7 @@ export async function GET() {
     pending,
     confirmed,
     billingThisMonth: monthRevenue._sum.price ?? 0,
-    recentAppointments,
+    recentAppointments: recentAppointments.map(withBookingName),
     onboarding: {
       availabilityConfigured: businessHours > 0,
       pushActive: pushSubscriptions > 0,

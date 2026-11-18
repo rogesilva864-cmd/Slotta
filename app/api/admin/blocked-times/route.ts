@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { bookingName } from '@/lib/appointments/customer-name';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
 import { canCancelAppointment } from '@/lib/appointments/cancel';
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       .map((appointment) => ({
         id: appointment.id,
         date: appointment.date,
-        customerName: appointment.customer.name,
+        customerName: bookingName(appointment),
         customerPhone: appointment.customer.phone,
         startTime: appointment.startTime,
         status: appointment.status,
