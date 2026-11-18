@@ -15,6 +15,7 @@ type Company = {
   name: string;
   slug: string;
   description: string | null;
+  autoConfirm?: boolean;
 };
 
 /** Data de hoje (AAAA-MM-DD) no horário de Brasília, para o cliente nunca ver "hoje" adiantado à noite. */
@@ -345,11 +346,35 @@ export function BookingClient({
               ) : null}
 
               <button type="submit" disabled={isSubmitting} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-70">
-                {isSubmitting ? 'Solicitando...' : 'Solicitar agendamento'}
+                {company.autoConfirm
+                  ? isSubmitting ? 'Agendando...' : 'Confirmar agendamento'
+                  : isSubmitting ? 'Solicitando...' : 'Solicitar agendamento'}
               </button>
             </form>
           </aside>
         </section>
+
+        <footer className="mt-10 flex flex-col items-center gap-1 pb-4 text-center text-xs text-slate-400">
+          <span>
+            Agendamento por{' '}
+            <a
+              href={`/?ref=agendar-${company.slug}`}
+              target="_blank"
+              rel="noopener"
+              className="font-semibold text-cyan-300 hover:text-cyan-200"
+            >
+              Slotta
+            </a>
+          </span>
+          <a
+            href={`/?ref=agendar-${company.slug}`}
+            target="_blank"
+            rel="noopener"
+            className="text-slate-400 underline-offset-2 hover:text-cyan-200 hover:underline"
+          >
+            Quero o Slotta para o meu negócio
+          </a>
+        </footer>
       </div>
     </main>
   );
