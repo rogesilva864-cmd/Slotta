@@ -38,6 +38,14 @@ async function verifySessionToken(token: string) {
   }
 }
 
+/** Manda para o login guardando o destino (ex.: link de notificação com ?agendamento=). */
+function redirectToLogin(request: NextRequest) {
+  const loginUrl = new URL('/admin/login', request.url);
+  const { pathname, search } = request.nextUrl;
+  if (search) loginUrl.searchParams.set('next', `${pathname}${search}`);
+  return NextResponse.redirect(loginUrl);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -52,13 +60,13 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('session_token')?.value;
 
   if (!token) {
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+    return redirectToLogin(request);
   }
 
   const isValid = await verifySessionToken(token);
 
   if (!isValid) {
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+    return redirectToLogin(request);
   }
 
   return NextResponse.next();

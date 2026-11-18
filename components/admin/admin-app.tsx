@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -47,8 +47,27 @@ const NAV_ITEMS: { key: TabKey; label: string; icon: typeof LayoutDashboard }[] 
 
 export type TrialWarning = { daysLeft: number; endsAt: string };
 
-export function AdminApp({ company, admin, trialWarning }: { company: AdminCompany; admin: AdminUser; trialWarning: TrialWarning | null }) {
-  const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+export function AdminApp({
+  company,
+  admin,
+  trialWarning,
+  focusAppointmentId = null,
+}: {
+  company: AdminCompany;
+  admin: AdminUser;
+  trialWarning: TrialWarning | null;
+  focusAppointmentId?: string | null;
+}) {
+  const [activeTab, setActiveTab] = useState<TabKey>(focusAppointmentId ? 'appointments' : 'dashboard');
+  // Só destaca uma vez; ao trocar de aba e voltar, a lista abre normal.
+  const [focusId, setFocusId] = useState<string | null>(focusAppointmentId);
+
+  useEffect(() => {
+    // Tira o ?agendamento= da barra para um F5 não repetir o destaque.
+    if (focusAppointmentId && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '/admin');
+    }
+  }, [focusAppointmentId]);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -59,6 +78,7 @@ export function AdminApp({ company, admin, trialWarning }: { company: AdminCompa
   const selectTab = (tab: TabKey) => {
     setActiveTab(tab);
     setDrawerOpen(false);
+    setFocusId(null);
   };
 
   const activeLabel = NAV_ITEMS.find((item) => item.key === activeTab)?.label ?? '';
@@ -142,7 +162,7 @@ export function AdminApp({ company, admin, trialWarning }: { company: AdminCompa
 
           <div className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
             {activeTab === 'dashboard' ? <DashboardPanel onNavigate={selectTab} /> : null}
-            {activeTab === 'appointments' ? <AppointmentsPanel /> : null}
+            {activeTab === 'appointments' ? <AppointmentsPanel focusId={focusId} /> : null}
             {activeTab === 'calendar' ? <CalendarPanel /> : null}
             {activeTab === 'services' ? <ServicesPanel /> : null}
             {activeTab === 'customers' ? <CustomersPanel /> : null}

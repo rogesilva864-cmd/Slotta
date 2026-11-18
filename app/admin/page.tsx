@@ -4,11 +4,15 @@ import { AdminApp } from '@/components/admin/admin-app';
 import { SubscriptionGate } from '@/components/admin/subscription-gate';
 import { PLAN_LABEL, hasBillingAccess, trialDaysLeft } from '@/lib/billing';
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: { agendamento?: string } }) {
   const sessionUser = await getSessionUser();
+  // Vindo de uma notificação: abre a aba Agendamentos já no agendamento.
+  const focusAppointmentId =
+    typeof searchParams.agendamento === 'string' && /^[a-z0-9_-]{6,40}$/i.test(searchParams.agendamento) ? searchParams.agendamento : null;
 
   if (!sessionUser) {
-    redirect('/admin/login');
+    // Guarda o destino para voltar a ele depois do login.
+    redirect(focusAppointmentId ? `/admin/login?next=${encodeURIComponent(`/admin?agendamento=${focusAppointmentId}`)}` : '/admin/login');
   }
 
   if (!hasBillingAccess(sessionUser.company)) {
@@ -22,6 +26,7 @@ export default async function AdminPage() {
   return (
     <AdminApp
       trialWarning={trialWarning}
+      focusAppointmentId={focusAppointmentId}
       company={{
         id: sessionUser.company.id,
         name: sessionUser.company.name,

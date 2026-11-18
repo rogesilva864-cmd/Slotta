@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Appointment } from '../types';
 import { formatCurrency, formatDate, statusClass, statusLabel } from '../types';
 import { CANCEL_REASON_DEFAULT, ManualContactList, channelLabel, requestCancel, type ManualContact } from '../cancel-helpers';
@@ -25,8 +25,10 @@ function hasStarted(appointment: Appointment) {
   return new Date(`${appointment.date}T${appointment.startTime}:00-03:00`).getTime() <= Date.now();
 }
 
-export function AppointmentsPanel() {
+export function AppointmentsPanel({ focusId = null }: { focusId?: string | null }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [highlightId, setHighlightId] = useState<string | null>(focusId);
+  const focusHandled = useRef(false);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
   const [loading, setLoading] = useState(true);
@@ -53,6 +55,20 @@ export function AppointmentsPanel() {
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, status]);
+
+  // Veio de uma notificação: rola até o agendamento e destaca por alguns segundos.
+  useEffect(() => {
+    if (!focusId || focusHandled.current || loading) return;
+    focusHandled.current = true;
+    const element = document.getElementById(`agendamento-${focusId}`);
+    if (!element) {
+      setHighlightId(null);
+      return;
+    }
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Sem cleanup de propósito: recarregar a lista não pode cancelar o fim do destaque.
+    setTimeout(() => setHighlightId(null), 6000);
+  }, [focusId, loading, appointments]);
 
   const updateStatus = async (appointmentId: string, action: 'confirm' | 'reject') => {
     setPendingAction(appointmentId);
@@ -140,7 +156,13 @@ export function AppointmentsPanel() {
         {!loading && appointments.length === 0 ? <p className="text-sm text-slate-300">Nenhum agendamento encontrado.</p> : null}
 
         {appointments.map((appointment) => (
-          <div key={appointment.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
+          <div
+            key={appointment.id}
+            id={`agendamento-${appointment.id}`}
+            className={`scroll-mt-24 rounded-xl border p-4 transition-colors duration-700 ${
+              highlightId === appointment.id ? 'border-cyan-400 bg-cyan-500/15 ring-2 ring-cyan-400/40' : 'border-white/10 bg-white/5'
+            }`}
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <strong>{appointment.customer.name}</strong>

@@ -101,7 +101,10 @@ function LoginForm({ onForgotPassword }: { onForgotPassword: () => void }) {
         return;
       }
 
-      router.push('/admin');
+      // Volta para onde a pessoa ia (ex.: link de notificação), só dentro do painel.
+      const next = new URLSearchParams(window.location.search).get('next');
+      const target = next && /^\/admin(\?|$)/.test(next) ? next : '/admin';
+      router.push(target as Parameters<typeof router.push>[0]);
       router.refresh();
     } catch {
       setError('Não foi possível conectar com o servidor.');

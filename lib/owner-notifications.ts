@@ -43,7 +43,8 @@ export async function notifyOwnersNewAppointment(appointmentId: string) {
   });
   if (!appointment) return;
 
-  const panelUrl = `${appUrl()}/admin`;
+  const panelPath = `/admin?agendamento=${appointment.id}`;
+  const panelUrl = `${appUrl()}${panelPath}`;
   const autoConfirmed = appointment.status === 'CONFIRMED';
   const summary = autoConfirmed
     ? `${bookingName(appointment)} agendou ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`
@@ -55,7 +56,7 @@ export async function notifyOwnersNewAppointment(appointmentId: string) {
         const delivered = await sendPushToUser(user.id, {
           title: autoConfirmed ? 'Novo agendamento confirmado' : 'Novo pedido de agendamento',
           body: summary,
-          url: '/admin',
+          url: panelPath,
           tag: `appointment-${appointment.id}`,
         });
 
@@ -84,7 +85,8 @@ export async function notifyOwnersAppointmentCancelledByClient(appointmentId: st
   });
   if (!appointment) return;
 
-  const panelUrl = `${appUrl()}/admin`;
+  const panelPath = `/admin?agendamento=${appointment.id}`;
+  const panelUrl = `${appUrl()}${panelPath}`;
   const summary = `${bookingName(appointment)} cancelou ${appointment.service.name} de ${appointment.date} às ${appointment.startTime}.`;
 
   await Promise.all(
@@ -93,7 +95,7 @@ export async function notifyOwnersAppointmentCancelledByClient(appointmentId: st
         const delivered = await sendPushToUser(user.id, {
           title: 'Cliente cancelou o agendamento',
           body: summary,
-          url: '/admin',
+          url: panelPath,
           tag: `appointment-${appointment.id}`,
         });
 
@@ -124,7 +126,8 @@ export async function notifyOwnersAppointmentRescheduled(
   });
   if (!appointment) return;
 
-  const panelUrl = `${appUrl()}/admin`;
+  const panelPath = `/admin?agendamento=${appointment.id}`;
+  const panelUrl = `${appUrl()}${panelPath}`;
   const summary = `${bookingName(appointment)} remarcou ${appointment.service.name}: ${previous.date} ${previous.startTime} → ${appointment.date} ${appointment.startTime}.`;
 
   await Promise.all(
@@ -133,7 +136,7 @@ export async function notifyOwnersAppointmentRescheduled(
         const delivered = await sendPushToUser(user.id, {
           title: 'Cliente remarcou o agendamento',
           body: summary,
-          url: '/admin',
+          url: panelPath,
           tag: `appointment-${appointment.id}`,
         });
 
