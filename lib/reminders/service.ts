@@ -62,6 +62,21 @@ export async function createRemindersForAppointment(appointmentId: string) {
     const scheduledFor = new Date(appointmentDateTime.getTime() - interval.minutesBefore * 60_000);
     if (scheduledFor <= now) continue;
 
+    const existing = await prisma.reminder.findUnique({
+      where: { appointmentId_type: { appointmentId, type: interval.key } },
+    });
+
+    // Lembrete cancelado (ex.: cliente remarcou) volta a valer, já com o
+    // horário novo. Pendentes/enviados/falhos ficam como estão (idempotente).
+    if (existing && existing.status === 'CANCELLED') {
+      const revived = await prisma.reminder.update({
+        where: { id: existing.id },
+        data: { status: 'PENDING', scheduledFor, minutesBefore: interval.minutesBefore, sentAt: null, error: null, attempts: 0 },
+      });
+      created.push(revived);
+      continue;
+    }
+
     const reminder = await prisma.reminder.upsert({
       where: { appointmentId_type: { appointmentId, type: interval.key } },
       update: {},

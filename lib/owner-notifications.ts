@@ -43,13 +43,16 @@ export async function notifyOwnersNewAppointment(appointmentId: string) {
   if (!appointment) return;
 
   const panelUrl = `${appUrl()}/admin`;
-  const summary = `${appointment.customer.name} pediu ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`;
+  const autoConfirmed = appointment.status === 'CONFIRMED';
+  const summary = autoConfirmed
+    ? `${appointment.customer.name} agendou ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`
+    : `${appointment.customer.name} pediu ${appointment.service.name} para ${appointment.date} às ${appointment.startTime}.`;
 
   await Promise.all(
     appointment.company.users.map(async (user) => {
       try {
         const delivered = await sendPushToUser(user.id, {
-          title: 'Novo pedido de agendamento',
+          title: autoConfirmed ? 'Novo agendamento confirmado' : 'Novo pedido de agendamento',
           body: summary,
           url: '/admin',
           tag: `appointment-${appointment.id}`,
@@ -62,6 +65,7 @@ export async function notifyOwnersNewAppointment(appointmentId: string) {
             date: appointment.date,
             startTime: appointment.startTime,
             panelUrl,
+            autoConfirmed,
           });
         }
       } catch (error) {

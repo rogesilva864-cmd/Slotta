@@ -42,6 +42,11 @@ model Company {
   cancelAtPeriodEnd    Boolean   @default(false)
   // 0 = nenhum aviso de fim de teste enviado; 1 = aviso de 3 dias; 2 = aviso das últimas 24h; 3 = aviso de teste encerrado.
   trialNoticeStage     Int       @default(0)
+
+  // true = agendamento feito pelo cliente já nasce CONFIRMED (confirmação por
+  // WhatsApp e lembretes saem na hora); false = fica PENDING até o dono confirmar.
+  // Empresas novas são criadas com true (ver /api/register); as antigas mantêm false.
+  autoConfirm          Boolean   @default(false)
 }
 
 model User {

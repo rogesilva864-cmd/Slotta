@@ -11,6 +11,9 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [autoConfirm, setAutoConfirm] = useState(false);
+  const [confirmSaving, setConfirmSaving] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -24,6 +27,7 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
           companyDescription: data.company.description ?? '',
         });
         setAdminForm({ adminName: data.admin?.name ?? '' });
+        setAutoConfirm(data.company.autoConfirm === true);
       })
       .finally(() => active && setLoading(false));
     return () => {
@@ -76,6 +80,46 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
     setMessage(data.message || 'Alterações salvas com sucesso.');
     setPasswordForm({ currentPassword: '', newPassword: '' });
   };
+
+  const saveAutoConfirm = async (value: boolean) => {
+    if (value === autoConfirm || confirmSaving) return;
+    const previous = autoConfirm;
+    setAutoConfirm(value);
+    setConfirmSaving(true);
+    setConfirmMessage(null);
+    try {
+      const response = await fetch('/api/admin/company', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoConfirm: value }),
+      });
+      if (!response.ok) throw new Error();
+      setConfirmMessage({
+        ok: true,
+        text: value
+          ? 'Pronto! Os próximos agendamentos já entram confirmados.'
+          : 'Pronto! Os próximos agendamentos vão esperar a sua confirmação.',
+      });
+    } catch {
+      setAutoConfirm(previous);
+      setConfirmMessage({ ok: false, text: 'Não foi possível salvar. Tente de novo.' });
+    } finally {
+      setConfirmSaving(false);
+    }
+  };
+
+  const confirmOptions = [
+    {
+      value: true,
+      title: 'Confirmar automaticamente',
+      text: 'O horário é confirmado na hora. O cliente recebe a confirmação e os lembretes sem você precisar fazer nada.',
+    },
+    {
+      value: false,
+      title: 'Eu confirmo cada pedido',
+      text: 'Cada agendamento fica pendente até você confirmar ou recusar no painel. O horário fica reservado enquanto isso.',
+    },
+  ];
 
   if (loading) {
     return <p className="text-sm text-slate-300">Carregando configurações...</p>;
@@ -161,6 +205,52 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
         <button type="submit" className="btn-primary w-full">Salvar alterações</button>
       </form>
 
+      <div className="space-y-6">
+      <div className="card p-5">
+        <h2 className="text-xl font-semibold">Confirmação dos agendamentos</h2>
+        <p className="mt-2 text-sm text-slate-300">Escolha o que acontece quando um cliente agenda pela sua página.</p>
+        <div className="mt-4 space-y-3" role="radiogroup" aria-label="Confirmação dos agendamentos">
+          {confirmOptions.map((option) => {
+            const selected = autoConfirm === option.value;
+            return (
+              <button
+                key={option.title}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={confirmSaving}
+                onClick={() => saveAutoConfirm(option.value)}
+                className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition ${
+                  selected ? 'border-cyan-400/60 bg-cyan-500/10' : 'border-white/10 bg-slate-950/40 hover:border-white/25'
+                }`}
+              >
+                <span
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                    selected ? 'border-cyan-400' : 'border-slate-500'
+                  }`}
+                  aria-hidden
+                >
+                  {selected ? <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" /> : null}
+                </span>
+                <span>
+                  <span className="block font-semibold">{option.title}</span>
+                  <span className="mt-1 block text-sm text-slate-300">{option.text}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {confirmMessage ? (
+          <div
+            className={`mt-3 rounded-xl border p-3 text-sm ${
+              confirmMessage.ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/30 bg-rose-500/10 text-rose-200'
+            }`}
+          >
+            {confirmMessage.text}
+          </div>
+        ) : null}
+      </div>
+
       <div className="card p-5">
         <h2 className="text-xl font-semibold">Página pública de agendamento</h2>
         <p className="mt-2 text-sm text-slate-300">Compartilhe este link com seus clientes para que eles possam agendar diretamente.</p>
@@ -170,6 +260,7 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
             {copied ? 'Copiado!' : 'Copiar link'}
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

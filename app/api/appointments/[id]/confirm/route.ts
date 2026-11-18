@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
-import { createRemindersForAppointment, sendAppointmentConfirmedMessage } from '@/lib/reminders/service';
+import { runAfterConfirmation } from '@/lib/appointments/confirm';
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   return updateStatus(params.id);
@@ -43,10 +43,7 @@ async function updateStatus(appointmentId: string) {
 
     // Best-effort: agenda os lembretes e dispara a confirmação por WhatsApp
     // sem bloquear/derrubar a resposta caso o envio falhe.
-    await createRemindersForAppointment(appointment.id).catch((error) => {
-      console.error('[appointments/confirm] Falha ao criar lembretes:', error);
-    });
-    await sendAppointmentConfirmedMessage(appointment.id);
+    await runAfterConfirmation(appointment.id);
 
     return NextResponse.json({ message: 'Agendamento confirmado.', appointment: updatedAppointment });
   } catch {

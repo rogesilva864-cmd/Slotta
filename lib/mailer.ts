@@ -80,15 +80,18 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
 
 export async function sendNewAppointmentEmail(
   to: string,
-  data: { customerName: string; serviceName: string; date: string; startTime: string; panelUrl: string }
+  data: { customerName: string; serviceName: string; date: string; startTime: string; panelUrl: string; autoConfirmed?: boolean }
 ) {
-  const line = `${data.customerName} pediu ${data.serviceName} para ${data.date} às ${data.startTime}.`;
+  const line = data.autoConfirmed
+    ? `${data.customerName} agendou ${data.serviceName} para ${data.date} às ${data.startTime}. O horário já foi confirmado automaticamente.`
+    : `${data.customerName} pediu ${data.serviceName} para ${data.date} às ${data.startTime}.`;
+  const title = data.autoConfirmed ? 'Novo agendamento confirmado' : 'Novo pedido de agendamento';
   return sendEmail({
     to,
-    subject: 'Novo pedido de agendamento no Slotta',
-    text: `${line}\n\nConfirme ou recuse no painel:\n${data.panelUrl}`,
+    subject: `${title} no Slotta`,
+    text: data.autoConfirmed ? `${line}\n\nVeja no painel:\n${data.panelUrl}` : `${line}\n\nConfirme ou recuse no painel:\n${data.panelUrl}`,
     html: layout(
-      'Novo pedido de agendamento',
+      title,
       `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 24px;">${escapeHtml(line)}</p>`,
       { url: data.panelUrl, label: 'Abrir painel' }
     ),

@@ -30,5 +30,5 @@ export async function POST(request: Request, { params }: { params: { id: string 
   });
   if (!result.ok) return NextResponse.json({ message: result.message }, { status: result.status });
 
-  return NextResponse.json({ message: result.message });
+  return NextResponse.json({ message: result.message, status: result.appointmentStatus ?? 'PENDING' });
 }

@@ -54,6 +54,8 @@ export async function POST(request: Request) {
         description: companyDescription || null,
         subscriptionStatus: 'trial',
         trialEndsAt: trialEndsAtFromNow(),
+        // Empresas novas já começam confirmando sozinhas; dá para mudar em Configurações.
+        autoConfirm: true,
       },
     });
 

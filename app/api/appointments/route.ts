@@ -6,6 +6,7 @@ import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { notifyOwnersNewAppointment } from '@/lib/owner-notifications';
 import { clearWaitlistForBooking } from '@/lib/waitlist/service';
 import { getClientIp, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
+import { runAfterConfirmation } from '@/lib/appointments/confirm';
 
 const IP_LIMIT = { limit: 15, windowMs: 60 * 60 * 1000 };
 const PHONE_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 };
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
       },
     });
 
+    const company = await prisma.company.findUnique({ where: { id: companyId }, select: { autoConfirm: true } });
+    const autoConfirmed = company?.autoConfirm === true;
+
     const appointment = await prisma.appointment.create({
       data: {
         companyId,
@@ -87,10 +91,15 @@ export async function POST(request: Request) {
         startTime,
         endTime: calculateEndTime(startTime, service.durationMinutes),
         price: service.price,
-        status: 'PENDING',
+        status: autoConfirmed ? 'CONFIRMED' : 'PENDING',
         notes: notes || null,
       },
     });
+
+    if (autoConfirmed) {
+      // Best-effort: lembretes + confirmação por WhatsApp sem atrasar a resposta ao cliente.
+      void runAfterConfirmation(appointment.id);
+    }
 
     void clearWaitlistForBooking({ companyId, phoneDigits, date }).catch((error) => {
       console.error('[appointments] Falha ao limpar a lista de espera:', error);
@@ -99,8 +108,8 @@ export async function POST(request: Request) {
     await prisma.notification.create({
       data: {
         companyId,
-        title: 'Novo agendamento recebido',
-        message: `${customerName} agendou ${service.name} para ${date} às ${startTime}.`,
+        title: autoConfirmed ? 'Novo agendamento confirmado' : 'Novo agendamento recebido',
+        message: `${customerName} agendou ${service.name} para ${date} às ${startTime}.${autoConfirmed ? ' Confirmado automaticamente.' : ''}`,
         appointmentId: appointment.id,
       },
     });
@@ -110,7 +119,10 @@ export async function POST(request: Request) {
       console.error('[appointments] Falha ao notificar o dono:', error);
     });
 
-    return NextResponse.json({ message: 'Agendamento solicitado com sucesso.', appointment }, { status: 201 });
+    return NextResponse.json(
+      { message: autoConfirmed ? 'Agendamento confirmado.' : 'Agendamento solicitado com sucesso.', appointment },
+      { status: 201 }
+    );
   } catch (error) {
     return NextResponse.json({ message: 'Não foi possível criar o agendamento.' }, { status: 500 });
   }

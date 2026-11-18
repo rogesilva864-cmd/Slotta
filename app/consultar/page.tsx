@@ -164,7 +164,7 @@ export default function ConsultStatusPage() {
                     onDone={(message, ok, updated) => {
                       setActionMessage({ ok, text: message });
                       if (ok && updated) {
-                        setResult((prev) => (prev ? { ...prev, ...updated, status: 'PENDING' } : prev));
+                        setResult((prev) => (prev ? { ...prev, ...updated } : prev));
                         setMode('idle');
                       }
                     }}
@@ -196,7 +196,7 @@ function RescheduleForm({
   appointment: AppointmentResult;
   contact: string;
   onCancel: () => void;
-  onDone: (message: string, ok: boolean, updated?: { date: string; startTime: string; endTime: string }) => void;
+  onDone: (message: string, ok: boolean, updated?: { date: string; startTime: string; endTime: string; status: string }) => void;
 }) {
   const dateOptions = useMemo(() => {
     const dates: string[] = [];
@@ -248,7 +248,11 @@ function RescheduleForm({
     });
     const data = await response.json();
     setBusy(false);
-    onDone(data.message, response.ok, response.ok ? { date: selectedDate, startTime, endTime } : undefined);
+    onDone(
+      data.message,
+      response.ok,
+      response.ok ? { date: selectedDate, startTime, endTime, status: data.status === 'CONFIRMED' ? 'CONFIRMED' : 'PENDING' } : undefined
+    );
   };
 
   return (

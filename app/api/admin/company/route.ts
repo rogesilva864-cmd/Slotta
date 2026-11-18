@@ -17,6 +17,7 @@ export async function GET() {
       phone: sessionUser.company.phone,
       description: sessionUser.company.description,
       slug: sessionUser.company.slug,
+      autoConfirm: sessionUser.company.autoConfirm,
     },
     admin: {
       id: sessionUser.id,
@@ -45,6 +46,9 @@ export async function PATCH(request: Request) {
     }
     if (typeof body.companyDescription === 'string') {
       companyData.description = body.companyDescription.trim() || null;
+    }
+    if (typeof body.autoConfirm === 'boolean') {
+      companyData.autoConfirm = body.autoConfirm;
     }
     if (typeof body.adminName === 'string' && body.adminName.trim()) {
       userData.name = body.adminName.trim();
@@ -79,7 +83,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       message: 'Informações atualizadas com sucesso.',
       company: company
-        ? { id: company.id, name: company.name, email: company.email, phone: company.phone, description: company.description, slug: company.slug }
+        ? { id: company.id, name: company.name, email: company.email, phone: company.phone, description: company.description, slug: company.slug, autoConfirm: company.autoConfirm }
         : null,
       admin: admin ? { id: admin.id, name: admin.name, email: admin.email } : null,
     });

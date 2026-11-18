@@ -140,7 +140,11 @@ export function BookingClient({
       return;
     }
 
-    setMessage('Agendamento solicitado com sucesso! O dono da empresa receberá a confirmação.');
+    setMessage(
+      data.appointment?.status === 'CONFIRMED'
+        ? 'Agendamento confirmado! Seu horário está garantido.'
+        : 'Agendamento solicitado com sucesso! Você será avisado assim que a empresa confirmar o horário.'
+    );
     setForm({ customerName: '', phone: '', email: '', notes: '' });
     setSelectedTime('');
     setSelectedDate(dateOptions[0]);

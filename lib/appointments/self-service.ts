@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { cancelPendingRemindersForAppointment } from '@/lib/reminders/service';
 import { canCancelAppointment } from '@/lib/appointments/cancel';
+import { runAfterConfirmation } from '@/lib/appointments/confirm';
 import { notifyOwnersAppointmentCancelledByClient, notifyOwnersAppointmentRescheduled } from '@/lib/owner-notifications';
 
 const CANCELLABLE_STATUSES = ['PENDING', 'CONFIRMED'];
@@ -18,7 +19,7 @@ function ownsAppointment(appointment: { id: string; customer: { phone: string; e
   return appointment.customer.phone.replace(/\D/g, '') === digits;
 }
 
-type ActionResult = { ok: false; message: string; status: number } | { ok: true; message: string };
+type ActionResult = { ok: false; message: string; status: number } | { ok: true; message: string; appointmentStatus?: string };
 
 async function loadOwnedAppointment(appointmentId: string, contact: string) {
   const appointment = await prisma.appointment.findUnique({
@@ -97,10 +98,17 @@ export async function selfRescheduleAppointment(params: {
   }
 
   const previous = { date: appointment.date, startTime: appointment.startTime };
+  const autoConfirmed = appointment.company.autoConfirm === true;
 
   const claimed = await prisma.appointment.updateMany({
     where: { id: appointment.id, status: { in: CANCELLABLE_STATUSES } },
-    data: { date: params.date, startTime: params.startTime, endTime, status: 'PENDING', rejectionReason: null },
+    data: {
+      date: params.date,
+      startTime: params.startTime,
+      endTime,
+      status: autoConfirmed ? 'CONFIRMED' : 'PENDING',
+      rejectionReason: null,
+    },
   });
   if (claimed.count === 0) return { ok: false, message: 'Não foi possível remarcar — tente buscar seu agendamento de novo.', status: 409 };
 
@@ -115,9 +123,19 @@ export async function selfRescheduleAppointment(params: {
   await cancelPendingRemindersForAppointment(appointment.id).catch((error2) => {
     console.error('[self-service] Falha ao cancelar lembretes antigos:', error2);
   });
+  if (autoConfirmed) {
+    // Novo horário já vale: lembretes com o horário novo + confirmação por WhatsApp.
+    void runAfterConfirmation(appointment.id);
+  }
   void notifyOwnersAppointmentRescheduled(appointment.id, previous).catch((error2) => {
     console.error('[self-service] Falha ao notificar o dono da remarcação:', error2);
   });
 
-  return { ok: true, message: 'Pedido de remarcação enviado! A empresa vai confirmar o novo horário.' };
+  return {
+    ok: true,
+    appointmentStatus: autoConfirmed ? 'CONFIRMED' : 'PENDING',
+    message: autoConfirmed
+      ? 'Horário remarcado com sucesso! O novo horário já está confirmado.'
+      : 'Pedido de remarcação enviado! A empresa vai confirmar o novo horário.',
+  };
 }
