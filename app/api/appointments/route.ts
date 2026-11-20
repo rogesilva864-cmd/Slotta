@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { appointmentSchema } from '@/lib/validators';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { notifyOwnersNewAppointment } from '@/lib/owner-notifications';
+import { notifyPlatformIfFirstAppointment } from '@/lib/first-use-notify';
 import { clearWaitlistForBooking } from '@/lib/waitlist/service';
 import { getClientIp, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
 import { runAfterConfirmation } from '@/lib/appointments/confirm';
@@ -119,6 +120,11 @@ export async function POST(request: Request) {
     // Best-effort: avisa o dono (push/e-mail) sem atrasar nem derrubar a resposta ao cliente.
     void notifyOwnersNewAppointment(appointment.id).catch((error) => {
       console.error('[appointments] Falha ao notificar o dono:', error);
+    });
+
+    // Best-effort: avisa o dono da plataforma quando é o primeiro agendamento da empresa.
+    void notifyPlatformIfFirstAppointment(appointment.id).catch((error) => {
+      console.error('[appointments] Falha ao avisar primeiro agendamento:', error);
     });
 
     return NextResponse.json(

@@ -204,6 +204,37 @@ export async function sendPlatformNewSubscriberEmail(to: string, data: { name: s
   });
 }
 
+export async function sendPlatformFirstLoginEmail(to: string, data: { name: string; email: string; publicUrl: string }) {
+  return sendEmail({
+    to,
+    subject: `Primeiro acesso no Slotta: ${data.name}`,
+    text: `${data.name} (${data.email}) entrou no painel do Slotta pela primeira vez.\n\nPágina pública: ${data.publicUrl}`,
+    html: layout(
+      'Primeiro acesso no Slotta 👋',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;"><strong style="color:#edf4ff;">${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)}) entrou no painel do Slotta pela primeira vez.</p>`,
+      { url: data.publicUrl, label: 'Ver página pública' }
+    ),
+  });
+}
+
+export async function sendPlatformFirstAppointmentEmail(
+  to: string,
+  data: { name: string; email: string; serviceName: string; date: string; startTime: string; publicUrl: string }
+) {
+  const [year, month, day] = data.date.split('-');
+  const when = `${day}/${month}/${year} às ${data.startTime}`;
+  return sendEmail({
+    to,
+    subject: `Primeiro agendamento no Slotta: ${data.name}`,
+    text: `${data.name} (${data.email}) recebeu o primeiro agendamento pelo Slotta: ${data.serviceName}, ${when}.\n\nPágina pública: ${data.publicUrl}`,
+    html: layout(
+      'Primeiro agendamento! 🎉',
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;"><strong style="color:#edf4ff;">${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)}) recebeu o primeiro agendamento pelo Slotta.</p><p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0;"><strong style="color:#edf4ff;">${escapeHtml(data.serviceName)}</strong>, ${escapeHtml(when)}.</p>`,
+      { url: data.publicUrl, label: 'Ver página pública' }
+    ),
+  });
+}
+
 export async function sendPlatformSubscriptionCanceledEmail(to: string, data: { name: string; email: string; accessUntilLabel: string }) {
   return sendEmail({
     to,

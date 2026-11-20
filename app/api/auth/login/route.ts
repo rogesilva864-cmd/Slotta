@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { loginSchema } from '@/lib/validators';
 import { signToken } from '@/lib/auth';
 import { getClientIp, peekRateLimit, recordHit, resetRateLimit, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
+import { notifyPlatformIfFirstLogin } from '@/lib/first-use-notify';
 
 const FAILURE_WINDOW_MS = 15 * 60 * 1000;
 const FAILURE_LIMIT = { limit: 8, windowMs: FAILURE_WINDOW_MS };
@@ -51,6 +52,11 @@ export async function POST(request: Request) {
     }
 
     resetRateLimit(failureKey);
+
+    // Best-effort: avisa o dono da plataforma no primeiro login da empresa, sem atrasar nem derrubar o login.
+    void notifyPlatformIfFirstLogin(user.company).catch((error) => {
+      console.error('[login] Falha ao avisar primeiro acesso:', error);
+    });
 
     const token = signToken({
       userId: user.id,

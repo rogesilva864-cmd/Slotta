@@ -47,6 +47,10 @@ model Company {
   // WhatsApp e lembretes saem na hora); false = fica PENDING até o dono confirmar.
   // Empresas novas são criadas com true (ver /api/register); as antigas mantêm false.
   autoConfirm          Boolean   @default(false)
+
+  // Primeiro login de alguém da empresa (usado só para avisar o dono da
+  // plataforma uma única vez). Empresas que já existiam foram preenchidas na migração.
+  firstLoginAt         DateTime?
 }
 
 model User {
