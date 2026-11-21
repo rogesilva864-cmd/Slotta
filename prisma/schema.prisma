@@ -51,6 +51,10 @@ model Company {
   // Primeiro login de alguém da empresa (usado só para avisar o dono da
   // plataforma uma única vez). Empresas que já existiam foram preenchidas na migração.
   firstLoginAt         DateTime?
+
+  // Prazo mínimo (em horas antes do início) para o cliente cancelar ou remarcar
+  // sozinho pela página de consulta. 0 = sem limite (comportamento original).
+  selfServiceMinHours  Int       @default(0)
 }
 
 model User {

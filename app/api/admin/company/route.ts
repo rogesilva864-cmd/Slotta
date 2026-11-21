@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
+import { isValidSelfServiceMinHours } from '@/lib/appointments/self-service-window';
 
 export async function GET() {
   const sessionUser = await getSessionUser();
@@ -18,6 +19,7 @@ export async function GET() {
       description: sessionUser.company.description,
       slug: sessionUser.company.slug,
       autoConfirm: sessionUser.company.autoConfirm,
+      selfServiceMinHours: sessionUser.company.selfServiceMinHours,
     },
     admin: {
       id: sessionUser.id,
@@ -49,6 +51,12 @@ export async function PATCH(request: Request) {
     }
     if (typeof body.autoConfirm === 'boolean') {
       companyData.autoConfirm = body.autoConfirm;
+    }
+    if (body.selfServiceMinHours !== undefined) {
+      if (!isValidSelfServiceMinHours(body.selfServiceMinHours)) {
+        return NextResponse.json({ message: 'Prazo inválido.' }, { status: 400 });
+      }
+      companyData.selfServiceMinHours = body.selfServiceMinHours;
     }
     if (typeof body.adminName === 'string' && body.adminName.trim()) {
       userData.name = body.adminName.trim();
@@ -83,7 +91,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       message: 'Informações atualizadas com sucesso.',
       company: company
-        ? { id: company.id, name: company.name, email: company.email, phone: company.phone, description: company.description, slug: company.slug, autoConfirm: company.autoConfirm }
+        ? { id: company.id, name: company.name, email: company.email, phone: company.phone, description: company.description, slug: company.slug, autoConfirm: company.autoConfirm, selfServiceMinHours: company.selfServiceMinHours }
         : null,
       admin: admin ? { id: admin.id, name: admin.name, email: admin.email } : null,
     });

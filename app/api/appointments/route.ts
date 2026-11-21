@@ -5,6 +5,7 @@ import { appointmentSchema } from '@/lib/validators';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { notifyOwnersNewAppointment } from '@/lib/owner-notifications';
 import { notifyPlatformIfFirstAppointment } from '@/lib/first-use-notify';
+import { isSelfServiceLocked } from '@/lib/appointments/self-service-window';
 import { clearWaitlistForBooking } from '@/lib/waitlist/service';
 import { getClientIp, takeRateLimit, tooManyRequests } from '@/lib/rate-limit';
 import { runAfterConfirmation } from '@/lib/appointments/confirm';
@@ -160,11 +161,26 @@ export async function GET(request: Request) {
     include: {
       service: { select: { name: true } },
       customer: { select: { name: true, phone: true, email: true } },
+      company: { select: { name: true, phone: true, selfServiceMinHours: true } },
     },
     orderBy: { createdAt: 'desc' },
     take: 5,
   });
 
-  return NextResponse.json({ appointments: appointments.map(withBookingName) });
+  // A página de consulta usa isto só para mostrar a mensagem certa; a regra de verdade é aplicada no self-cancel/self-reschedule.
+  const now = new Date();
+  return NextResponse.json({
+    appointments: appointments.map((appointment) => {
+      const { company, ...rest } = withBookingName(appointment);
+      const selfServiceLocked = isSelfServiceLocked(appointment, company.selfServiceMinHours, now);
+      return {
+        ...rest,
+        selfServiceLocked,
+        selfServiceMinHours: company.selfServiceMinHours,
+        companyName: company.name,
+        companyPhone: selfServiceLocked ? company.phone : null,
+      };
+    }),
+  });
 }
 

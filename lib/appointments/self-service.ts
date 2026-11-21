@@ -3,6 +3,7 @@ import { bookingName } from '@/lib/appointments/customer-name';
 import { calculateEndTime, getAvailableSlots } from '@/lib/availability';
 import { cancelPendingRemindersForAppointment } from '@/lib/reminders/service';
 import { canCancelAppointment } from '@/lib/appointments/cancel';
+import { isSelfServiceLocked, selfServiceLockedMessage } from '@/lib/appointments/self-service-window';
 import { runAfterConfirmation } from '@/lib/appointments/confirm';
 import { notifyOwnersAppointmentCancelledByClient, notifyOwnersAppointmentRescheduled } from '@/lib/owner-notifications';
 
@@ -44,6 +45,10 @@ export async function selfCancelAppointment(params: { appointmentId: string; con
     return { ok: false, message: 'Este agendamento não pode mais ser cancelado (já passou ou já foi encerrado).', status: 400 };
   }
 
+  if (isSelfServiceLocked(appointment, appointment.company.selfServiceMinHours)) {
+    return { ok: false, message: selfServiceLockedMessage(appointment.company.name, appointment.company.selfServiceMinHours), status: 400 };
+  }
+
   const claimed = await prisma.appointment.updateMany({
     where: { id: appointment.id, status: { in: CANCELLABLE_STATUSES } },
     data: { status: 'CANCELLED', rejectionReason: 'Cancelado pelo cliente.' },
@@ -80,6 +85,10 @@ export async function selfRescheduleAppointment(params: {
 
   if (!canCancelAppointment(appointment)) {
     return { ok: false, message: 'Este agendamento não pode mais ser remarcado (já passou ou já foi encerrado).', status: 400 };
+  }
+
+  if (isSelfServiceLocked(appointment, appointment.company.selfServiceMinHours)) {
+    return { ok: false, message: selfServiceLockedMessage(appointment.company.name, appointment.company.selfServiceMinHours), status: 400 };
   }
 
   if (params.date === appointment.date && params.startTime === appointment.startTime) {

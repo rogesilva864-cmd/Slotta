@@ -13,7 +13,17 @@ type AppointmentResult = {
   status: string;
   service: { name: string };
   customer: { name: string; phone: string; email?: string | null };
+  selfServiceLocked?: boolean;
+  selfServiceMinHours?: number;
+  companyName?: string;
+  companyPhone?: string | null;
 };
+
+function whatsappLink(phone: string) {
+  let digits = phone.replace(/\D/g, '');
+  if (digits.length === 10 || digits.length === 11) digits = `55${digits}`;
+  return `https://wa.me/${digits}`;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -129,7 +139,21 @@ export default function ConsultStatusPage() {
               <p>Contato: {result.customer.phone}</p>
             </div>
 
-            {isActionable(result) ? (
+            {isActionable(result) && result.selfServiceLocked ? (
+              <div className="mt-5 space-y-3 border-t border-white/10 pt-4">
+                <p className="text-sm text-slate-200">
+                  Faltam menos de {result.selfServiceMinHours} horas para o seu horário. Para cancelar ou remarcar, fale direto com{' '}
+                  {result.companyName || 'a empresa'} pelo WhatsApp.
+                </p>
+                {result.companyPhone ? (
+                  <a href={whatsappLink(result.companyPhone)} target="_blank" rel="noopener noreferrer" className="btn-primary inline-flex text-sm">
+                    Falar pelo WhatsApp
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+
+            {isActionable(result) && !result.selfServiceLocked ? (
               <div className="mt-5 border-t border-white/10 pt-4">
                 {mode === 'idle' ? (
                   <div className="flex flex-wrap gap-3">

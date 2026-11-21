@@ -14,6 +14,9 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
   const [autoConfirm, setAutoConfirm] = useState(false);
   const [confirmSaving, setConfirmSaving] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [minHours, setMinHours] = useState(0);
+  const [minHoursSaving, setMinHoursSaving] = useState(false);
+  const [minHoursMessage, setMinHoursMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -28,6 +31,7 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
         });
         setAdminForm({ adminName: data.admin?.name ?? '' });
         setAutoConfirm(data.company.autoConfirm === true);
+        setMinHours(typeof data.company.selfServiceMinHours === 'number' ? data.company.selfServiceMinHours : 0);
       })
       .finally(() => active && setLoading(false));
     return () => {
@@ -107,6 +111,42 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
       setConfirmSaving(false);
     }
   };
+
+  const saveMinHours = async (value: number) => {
+    if (value === minHours || minHoursSaving) return;
+    const previous = minHours;
+    setMinHours(value);
+    setMinHoursSaving(true);
+    setMinHoursMessage(null);
+    try {
+      const response = await fetch('/api/admin/company', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selfServiceMinHours: value }),
+      });
+      if (!response.ok) throw new Error();
+      setMinHoursMessage({
+        ok: true,
+        text: value
+          ? `Pronto! Faltando menos de ${value}h, o cliente só consegue desmarcar falando com você pelo WhatsApp.`
+          : 'Pronto! O cliente pode cancelar ou remarcar pelo link até a hora do atendimento.',
+      });
+    } catch {
+      setMinHours(previous);
+      setMinHoursMessage({ ok: false, text: 'Não foi possível salvar. Tente de novo.' });
+    } finally {
+      setMinHoursSaving(false);
+    }
+  };
+
+  const minHoursOptions = [
+    { value: 0, label: 'Sem limite' },
+    { value: 2, label: '2 horas antes' },
+    { value: 6, label: '6 horas antes' },
+    { value: 12, label: '12 horas antes' },
+    { value: 24, label: '24 horas antes' },
+    { value: 48, label: '48 horas antes' },
+  ];
 
   const confirmOptions = [
     {
@@ -247,6 +287,42 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
             }`}
           >
             {confirmMessage.text}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="card p-5">
+        <h2 className="text-xl font-semibold">Prazo para o cliente desmarcar</h2>
+        <p className="mt-2 text-sm text-slate-300">
+          Até quando o cliente pode cancelar ou remarcar sozinho pelo link. Depois desse prazo, ele vê uma mensagem para falar com você pelo WhatsApp.
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Prazo para o cliente desmarcar">
+          {minHoursOptions.map((option) => {
+            const selected = minHours === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={minHoursSaving}
+                onClick={() => saveMinHours(option.value)}
+                className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
+                  selected ? 'border-cyan-400/60 bg-cyan-500/10 text-cyan-100' : 'border-white/10 bg-slate-950/40 hover:border-white/25'
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+        {minHoursMessage ? (
+          <div
+            className={`mt-3 rounded-xl border p-3 text-sm ${
+              minHoursMessage.ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/30 bg-rose-500/10 text-rose-200'
+            }`}
+          >
+            {minHoursMessage.text}
           </div>
         ) : null}
       </div>
