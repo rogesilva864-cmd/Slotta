@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
 import { isValidSelfServiceMinHours } from '@/lib/appointments/self-service-window';
+import { isValidCompanyLogo } from '@/lib/company-logo';
 
 export async function GET() {
   const sessionUser = await getSessionUser();
@@ -20,6 +21,7 @@ export async function GET() {
       slug: sessionUser.company.slug,
       autoConfirm: sessionUser.company.autoConfirm,
       selfServiceMinHours: sessionUser.company.selfServiceMinHours,
+      logo: sessionUser.company.logo,
     },
     admin: {
       id: sessionUser.id,
@@ -58,6 +60,14 @@ export async function PATCH(request: Request) {
       }
       companyData.selfServiceMinHours = body.selfServiceMinHours;
     }
+    if (body.logo === null) {
+      companyData.logo = null;
+    } else if (body.logo !== undefined) {
+      if (!isValidCompanyLogo(body.logo)) {
+        return NextResponse.json({ message: 'Foto inválida. Envie uma imagem JPG, PNG ou WEBP.' }, { status: 400 });
+      }
+      companyData.logo = body.logo;
+    }
     if (typeof body.adminName === 'string' && body.adminName.trim()) {
       userData.name = body.adminName.trim();
     }
@@ -91,7 +101,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       message: 'Informações atualizadas com sucesso.',
       company: company
-        ? { id: company.id, name: company.name, email: company.email, phone: company.phone, description: company.description, slug: company.slug, autoConfirm: company.autoConfirm, selfServiceMinHours: company.selfServiceMinHours }
+        ? { id: company.id, name: company.name, email: company.email, phone: company.phone, description: company.description, slug: company.slug, autoConfirm: company.autoConfirm, selfServiceMinHours: company.selfServiceMinHours, logo: company.logo }
         : null,
       admin: admin ? { id: admin.id, name: admin.name, email: admin.email } : null,
     });

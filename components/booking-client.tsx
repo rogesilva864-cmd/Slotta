@@ -16,6 +16,7 @@ type Company = {
   slug: string;
   description: string | null;
   autoConfirm?: boolean;
+  logo?: string | null;
 };
 
 /** Data de hoje (AAAA-MM-DD) no horário de Brasília, para o cliente nunca ver "hoje" adiantado à noite. */
@@ -189,10 +190,19 @@ export function BookingClient({
       <div className="mx-auto max-w-6xl">
         <header className="card p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">{company.name}</p>
-              <h1 className="mt-2 text-3xl font-bold">Agende seu horário</h1>
-              {company.description ? <p className="mt-2 text-slate-300">{company.description}</p> : null}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {company.logo ? (
+                <img
+                  src={company.logo}
+                  alt={`Foto de ${company.name}`}
+                  className="h-24 w-24 shrink-0 rounded-full border-2 border-cyan-400/60 object-cover shadow-lg shadow-cyan-500/20"
+                />
+              ) : null}
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">{company.name}</p>
+                <h1 className="mt-2 text-3xl font-bold">Agende seu horário</h1>
+                {company.description ? <p className="mt-2 text-slate-300">{company.description}</p> : null}
+              </div>
             </div>
             <a href="/" className="btn-secondary">Voltar</a>
           </div>

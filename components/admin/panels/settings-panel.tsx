@@ -1,7 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AdminCompany, AdminUser } from '../types';
+
+/** Recorta a imagem no centro em formato quadrado e reduz para 400 px (JPEG), direto no navegador. */
+async function squareJpeg(file: File, size = 400): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('imagem'));
+      el.src = url;
+    });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = (img.naturalWidth - side) / 2;
+    // Em foto vertical o rosto costuma ficar na parte de cima: o recorte mira o terço superior.
+    const sy = (img.naturalHeight - side) * 0.25;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('canvas');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+    return canvas.toDataURL('image/jpeg', 0.86);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export function SettingsPanel({ company, admin }: { company: AdminCompany; admin: AdminUser }) {
   const [companyForm, setCompanyForm] = useState({ companyName: '', companyPhone: '', companyDescription: '' });
@@ -17,6 +46,10 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
   const [minHours, setMinHours] = useState(0);
   const [minHoursSaving, setMinHoursSaving] = useState(false);
   const [minHoursMessage, setMinHoursMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [logo, setLogo] = useState<string | null>(null);
+  const [logoSaving, setLogoSaving] = useState(false);
+  const [logoMessage, setLogoMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const logoInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -32,6 +65,7 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
         setAdminForm({ adminName: data.admin?.name ?? '' });
         setAutoConfirm(data.company.autoConfirm === true);
         setMinHours(typeof data.company.selfServiceMinHours === 'number' ? data.company.selfServiceMinHours : 0);
+        setLogo(typeof data.company.logo === 'string' ? data.company.logo : null);
       })
       .finally(() => active && setLoading(false));
     return () => {
@@ -136,6 +170,41 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
       setMinHoursMessage({ ok: false, text: 'Não foi possível salvar. Tente de novo.' });
     } finally {
       setMinHoursSaving(false);
+    }
+  };
+
+  const saveLogo = async (value: string | null) => {
+    setLogoSaving(true);
+    setLogoMessage(null);
+    try {
+      const response = await fetch('/api/admin/company', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logo: value }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || 'Não foi possível salvar a foto.');
+      setLogo(value);
+      setLogoMessage({ ok: true, text: value ? 'Pronto! A foto já aparece na sua página de agendamento.' : 'Foto removida da sua página.' });
+    } catch (err) {
+      setLogoMessage({ ok: false, text: err instanceof Error ? err.message : 'Não foi possível salvar a foto.' });
+    } finally {
+      setLogoSaving(false);
+    }
+  };
+
+  const pickLogo = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setLogoMessage({ ok: false, text: 'Escolha um arquivo de imagem (foto).' });
+      return;
+    }
+    try {
+      await saveLogo(await squareJpeg(file));
+    } catch {
+      setLogoMessage({ ok: false, text: 'Não consegui abrir essa imagem. Tente outra foto.' });
     }
   };
 
@@ -246,6 +315,38 @@ export function SettingsPanel({ company, admin }: { company: AdminCompany; admin
       </form>
 
       <div className="space-y-6">
+      <div className="card p-5">
+        <h2 className="text-xl font-semibold">Foto de perfil</h2>
+        <p className="mt-2 text-sm text-slate-300">Aparece no topo da sua página de agendamento. Pode ser uma foto sua ou o logo do seu negócio.</p>
+        <div className="mt-4 flex items-center gap-4">
+          {logo ? (
+            <img src={logo} alt="Foto de perfil" className="h-20 w-20 shrink-0 rounded-full border-2 border-cyan-400/60 object-cover" />
+          ) : (
+            <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-white/20 text-xs text-slate-400">Sem foto</span>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-primary text-sm" disabled={logoSaving} onClick={() => logoInput.current?.click()}>
+              {logoSaving ? 'Salvando...' : logo ? 'Trocar foto' : 'Escolher foto'}
+            </button>
+            {logo ? (
+              <button type="button" className="btn-secondary text-sm" disabled={logoSaving} onClick={() => saveLogo(null)}>
+                Remover
+              </button>
+            ) : null}
+          </div>
+          <input ref={logoInput} type="file" accept="image/*" className="hidden" onChange={pickLogo} />
+        </div>
+        {logoMessage ? (
+          <div
+            className={`mt-3 rounded-xl border p-3 text-sm ${
+              logoMessage.ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100' : 'border-rose-500/30 bg-rose-500/10 text-rose-200'
+            }`}
+          >
+            {logoMessage.text}
+          </div>
+        ) : null}
+      </div>
+
       <div className="card p-5">
         <h2 className="text-xl font-semibold">Confirmação dos agendamentos</h2>
         <p className="mt-2 text-sm text-slate-300">Escolha o que acontece quando um cliente agenda pela sua página.</p>

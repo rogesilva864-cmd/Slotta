@@ -12,7 +12,7 @@ export default async function CompanyBookingPage({
   // Só os campos que a página pública usa: o objeto vai inteiro para o navegador.
   const company = await prisma.company.findUnique({
     where: { slug: params.slug },
-    select: { id: true, name: true, slug: true, description: true, autoConfirm: true },
+    select: { id: true, name: true, slug: true, description: true, autoConfirm: true, logo: true },
   });
 
   if (!company) {
