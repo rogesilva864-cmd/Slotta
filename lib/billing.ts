@@ -1,8 +1,9 @@
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 import { notifyPlatformNewSubscriber, notifyPlatformSubscriptionCanceled } from '@/lib/platform-notify';
+import { TRIAL_DAYS } from '@/lib/trial';
 
-export const TRIAL_DAYS = 14;
+export { TRIAL_DAYS };
 export const PLAN_PRICE_LABEL = 'R$ 59,90';
 export const PLAN_LABEL = `Plano Slotta — ${PLAN_PRICE_LABEL}/mês`;
 

@@ -37,7 +37,7 @@ export default function HomePage() {
               O Slotta recebe os agendamentos do seu negócio, organiza os horários e lembra seus clientes pelo WhatsApp.
             </p>
             <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-sm font-semibold text-emerald-200">
-              <CheckCircle2 size={16} aria-hidden /> 14 dias grátis, sem cartão de crédito
+              <CheckCircle2 size={16} aria-hidden /> {TRIAL_DAYS} dias grátis, sem cartão de crédito
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link href="/cadastro" className="btn-primary">Cadastrar minha empresa</Link>

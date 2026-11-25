@@ -1,3 +1,5 @@
+import { TRIAL_DAYS } from '@/lib/trial';
+
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 type EmailContent = { to: string; subject: string; text: string; html: string };
@@ -183,10 +185,10 @@ export async function sendPlatformNewCompanyEmail(to: string, data: { name: stri
   return sendEmail({
     to,
     subject: `Novo cadastro no Slotta: ${data.name}`,
-    text: `${data.name} (${data.email}) acabou de cadastrar uma empresa no Slotta e começou o teste grátis de 14 dias.\n\nPágina pública: ${data.publicUrl}`,
+    text: `${data.name} (${data.email}) acabou de cadastrar uma empresa no Slotta e começou o teste grátis de ${TRIAL_DAYS} dias.\n\nPágina pública: ${data.publicUrl}`,
     html: layout(
       'Novo cadastro no Slotta',
-      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;"><strong style="color:#edf4ff;">${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)}) acabou de cadastrar uma empresa e começou o teste grátis de 14 dias.</p>`,
+      `<p style="font-size:14px;line-height:1.6;color:#aac0dd;margin:0 0 12px;"><strong style="color:#edf4ff;">${escapeHtml(data.name)}</strong> (${escapeHtml(data.email)}) acabou de cadastrar uma empresa e começou o teste grátis de ${TRIAL_DAYS} dias.</p>`,
       { url: data.publicUrl, label: 'Ver página pública' }
     ),
   });
